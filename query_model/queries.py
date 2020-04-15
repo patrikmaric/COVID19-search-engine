@@ -1,6 +1,6 @@
 from nltk.corpus import stopwords
 
-from dataset.data import CovidDataLoader
+from dataset.data import CovidDataLoader, abstract_keys
 from query_model.transformers.bm25 import BM25Transformer
 from settings import data_root_path
 
@@ -9,6 +9,9 @@ from sklearn.feature_extraction.text import CountVectorizer
 import pickle
 
 import pandas as pd
+
+
+# TODO: short(wrongly separated) sentences are the current problem...
 
 
 class QueryEngine():
@@ -59,14 +62,14 @@ class QueryEngine():
 
     def run_query(self, query, n=5):
         """
-        Runs the given query, returns max n most similar documents from the corpus on which the model was build.
+        Runs the given query, returns max n most similar documents from the corpus on which the model was built.
 
         Args:
             query: query to run
             n: max number of results returned
 
         Returns:
-            n(or less) most similar documents from the corpus on which the model was build
+            n(or less) most similar documents from the corpus on which the model was built
         """
         if self.corpus is None:
             raise AttributeError('Model not built jet, please call the fit method before running queries!')
@@ -84,7 +87,7 @@ class QueryEngine():
 
         Args:
             dir_path: path of the directory to save the object to
-            name: name of the file without any extensions
+            name: name of the file (without extension)
         """
         pickle_path = dir_path + name + '.dat'
         print('Writing object to %s' % pickle_path)
@@ -94,7 +97,7 @@ class QueryEngine():
     @staticmethod
     def load(pickle_path):
         """
-        Loads(de-serializes) QueryEngine object from the given path.
+        Loads(de-serializes) QueryEngine object from the file at the given path.
 
         Args:
             pickle_path: path to QueryEngine pickle
@@ -113,7 +116,7 @@ if __name__ == '__main__':
     stop_words = set(stopwords.words('english'))
 
     article_paths = CovidDataLoader.load_articles_paths(data_root_path)
-    abstracts = CovidDataLoader.load_abstracts_data(article_paths, offset=5000, limit=15000, load_sentences=True)
+    abstracts = CovidDataLoader.load_data(article_paths, key='body_text', limit=2000, keys=abstract_keys, load_sentences=True)
 
     corpus = list(abstracts['text'])
     paper_ids = list(abstracts['paper_id'])
@@ -125,9 +128,9 @@ if __name__ == '__main__':
     query_engine = QueryEngine(cv, transformer)
     query_engine.fit(corpus, paper_ids)
 
-    query_engine.save('./', 'abstracts_query_engine')
-    query_engine2 = QueryEngine.load('abstracts_query_engine.dat')
+    query_engine.save('./', 'abstracts_query_engine2')
+    #query_engine2 = QueryEngine.load('abstracts_query_engine.dat')
 
     # query = ['similar health treatment']
     query = 'LDH'
-    query_result = query_engine2.run_query(query)
+    #query_result = query_engine2.run_query(query)
