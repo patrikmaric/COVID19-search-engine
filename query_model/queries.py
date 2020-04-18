@@ -1,6 +1,8 @@
 from nltk.corpus import stopwords
 
 from dataset.data import CovidDataLoader, abstract_keys
+#from data import CovidDataLoader, abstract_keys
+
 from query_model.transformers.bm25 import BM25Transformer
 from settings import data_root_path
 
@@ -116,12 +118,13 @@ if __name__ == '__main__':
     stop_words = set(stopwords.words('english'))
 
     article_paths = CovidDataLoader.load_articles_paths(data_root_path)
-    abstracts = CovidDataLoader.load_data(article_paths, key='body_text', limit=2000, keys=abstract_keys, load_sentences=True)
-
+    abstracts = CovidDataLoader.load_data(article_paths, key='abstract', limit=1, keys=abstract_keys, load_sentences=True)
+    
     corpus = list(abstracts['text'])
     paper_ids = list(abstracts['paper_id'])
 
     cv = CountVectorizer(stop_words=stop_words)
+
     # transformer = TfidfTransformer(smooth_idf=True, use_idf=True)
     transformer = BM25Transformer()
 

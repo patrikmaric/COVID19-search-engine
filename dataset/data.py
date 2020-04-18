@@ -6,8 +6,14 @@ import tqdm
 from nltk import sent_tokenize
 from nltk.corpus import stopwords
 
-from dataset.util import extract_data_from_dict
 from settings import data_root_path
+from dataset.util import extract_data_from_dict
+from dataset.util import join_abstract_text
+
+#from util import extract_data_from_dict
+#from util import join_abstract_text
+
+
 
 abstract_keys = ('section', 'text')
 body_text_keys = ('section', 'text')
@@ -69,15 +75,20 @@ class CovidDataLoader():
         for path in tqdm.tqdm(articles_paths[offset:last_index]):
             with open(path, 'r') as f:
                 curr_article = json.load(f)
+                abstract_data = []
                 if key in curr_article:
                     for section in curr_article[key]:
                         curr_part = {'paper_id': curr_article['paper_id']}
                         try:
                             curr_part.update(extract_data_from_dict(section, keys, mandatory_keys=['text']))
-                            data_.append(curr_part)
+                            if key == 'abstract':
+                                abstract_data.append(curr_part)
+                            else:
+                                data_.append(curr_part)
                         except:
                             pass
-
+                if key == 'abstract' and abstract_data != []:
+                    data_.append(join_abstract_text(abstract_data))
         if load_sentences:
             return CovidDataLoader.__load_sentences(data_)
         return pd.DataFrame(data_)
@@ -105,6 +116,7 @@ if __name__ == '__main__':
 
     body_text_keys = ('section', 'text')
     article_paths = CovidDataLoader.load_articles_paths(data_root_path)
-    abstracts = CovidDataLoader.load_data(article_paths, offset=5000, limit=10, load_sentences=True)
-    # body_text_sents = CovidDataLoader.load_data(article_paths, key='body_text', keys=body_text_keys, offset=5000,
-    #                                            limit=5000, load_sentences=True)
+    abstracts = CovidDataLoader.load_data(article_paths, offset=0, limit=10, load_sentences=True)
+    #body_text_sents = CovidDataLoader.load_data(article_paths, key='body_text', keys=body_text_keys, offset=0,
+    #                                            limit=1, load_sentences=True)
+    #print(body_text_sents)

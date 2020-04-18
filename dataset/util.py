@@ -35,3 +35,17 @@ def load_sentences_from_abstracts(abstracts):
             sentences.append(sent)
     return pd.DataFrame(sentences)
 
+def join_abstract_text(abstract):
+    d2 = {}
+    text = ''
+    for section in abstract:
+        keys = section.keys()
+        for k in keys:
+            if  k=='text':
+               text += section[k] + ' '
+            if k != 'text' and k not in d2.keys():
+                d2.update({k: section[k]})
+    if text != '':
+        d2.update({'text': text})
+    return d2
+
