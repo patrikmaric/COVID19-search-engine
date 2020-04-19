@@ -3,8 +3,9 @@ from pathlib import Path
 
 import pandas as pd
 import tqdm
-from nltk import sent_tokenize
+from nltk import sent_tokenize, word_tokenize
 from nltk.corpus import stopwords
+from nltk.stem import PorterStemmer
 
 from settings import data_root_path
 from dataset.util import extract_data_from_dict
@@ -40,7 +41,7 @@ class CovidDataLoader():
         return article_paths
 
     @staticmethod
-    def load_data(articles_paths, key='abstract', offset=0, limit=None, keys=abstract_keys, load_sentences=False):
+    def load_data(articles_paths, key='abstract', offset=0, limit=None, keys=abstract_keys, load_sentences=False, stem=False):
         """
         Given the list of paths to articles json files, returns pandas DataFrame containing the info defined by the keys param.
 
@@ -61,6 +62,7 @@ class CovidDataLoader():
             limit: number of articles to load
             keys: specifier for the data defined by the key
             load_sentences: if true, it divides the sections further into sentences
+            stem: if true, it returns sentences with stemmed words
 
         Returns:
 
@@ -90,11 +92,11 @@ class CovidDataLoader():
                 if key == 'abstract' and abstract_data != []:
                     data_.append(join_abstract_text(abstract_data))
         if load_sentences:
-            return CovidDataLoader.__load_sentences(data_)
+            return CovidDataLoader.__load_sentences(data_, stem)
         return pd.DataFrame(data_)
 
     @staticmethod
-    def __load_sentences(texts):
+    def __load_sentences(texts, stem):
         sentences = []
         for text in texts:
             sents = sent_tokenize(text['text'])
@@ -108,7 +110,30 @@ class CovidDataLoader():
                 sent['text'] = sents[i]
                 sent['position'] = i
                 sentences.append(sent)
+        if (stem):
+            return CovidDataLoader.word_stem(sentences)
         return pd.DataFrame(sentences)
+    
+    @staticmethod
+    def word_stem(texts):
+        sentences = []
+        porter = PorterStemmer()
+        for sentence in texts:
+            d = {}
+            stem_sentence = []
+            for k in sentence.keys():
+                if k!='text':
+                    d.update({k: sentence[k]})
+                else:
+                    word_tokens = word_tokenize(sentence[k])
+                    for word in word_tokens:
+                        stem_sentence.append(porter.stem(word))
+                        stem_sentence.append(' ')
+                    stem_sentence = ''.join(stem_sentence)
+                    d.update({k: stem_sentence})
+            sentences.append(d)
+        return pd.DataFrame(sentences) 
+            
 
 
 if __name__ == '__main__':
@@ -116,7 +141,8 @@ if __name__ == '__main__':
 
     body_text_keys = ('section', 'text')
     article_paths = CovidDataLoader.load_articles_paths(data_root_path)
-    abstracts = CovidDataLoader.load_data(article_paths, offset=0, limit=10, load_sentences=True)
-    #body_text_sents = CovidDataLoader.load_data(article_paths, key='body_text', keys=body_text_keys, offset=0,
-    #                                            limit=1, load_sentences=True)
-    #print(body_text_sents)
+    abstracts = CovidDataLoader.load_data(article_paths, offset=0, limit=2, load_sentences=True, stem=True)
+#    print(abstracts)
+#    body_text_sents = CovidDataLoader.load_data(article_paths, key='body_text', keys=body_text_keys, offset=0,
+#                                                limit=1, load_sentences=True, stem=True)
+#    print(body_text_sents)

@@ -35,6 +35,8 @@ class QueryEngine():
         self.ids = document_ids
         self.corpus = corpus
         word_count_vector = self.cv.fit_transform(corpus)
+        print(cv.get_feature_names())
+        print(word_count_vector)
         self.transformer.fit(word_count_vector)
         self.corpus_tf_idf_vector = self.transformer.transform(word_count_vector)
 
@@ -118,10 +120,11 @@ if __name__ == '__main__':
     stop_words = set(stopwords.words('english'))
 
     article_paths = CovidDataLoader.load_articles_paths(data_root_path)
-    abstracts = CovidDataLoader.load_data(article_paths, key='abstract', limit=1, keys=abstract_keys, load_sentences=True)
+    abstracts = CovidDataLoader.load_data(article_paths, key='abstract',offset=0, limit=1, keys=abstract_keys, load_sentences=True)
     
     corpus = list(abstracts['text'])
     paper_ids = list(abstracts['paper_id'])
+    print(corpus)
 
     cv = CountVectorizer(stop_words=stop_words)
 
@@ -131,7 +134,7 @@ if __name__ == '__main__':
     query_engine = QueryEngine(cv, transformer)
     query_engine.fit(corpus, paper_ids)
 
-    query_engine.save('./', 'abstracts_query_engine2')
+    #query_engine.save('./', 'abstracts_query_engine2')
     #query_engine2 = QueryEngine.load('abstracts_query_engine.dat')
 
     # query = ['similar health treatment']
