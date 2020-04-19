@@ -35,6 +35,7 @@ def load_sentences_from_abstracts(abstracts):
             sentences.append(sent)
     return pd.DataFrame(sentences)
 
+
 def join_abstract_text(abstract):
     d2 = {}
     text = ''

@@ -35,8 +35,6 @@ class QueryEngine():
         self.ids = document_ids
         self.corpus = corpus
         word_count_vector = self.cv.fit_transform(corpus)
-        print(cv.get_feature_names())
-        print(word_count_vector)
         self.transformer.fit(word_count_vector)
         self.corpus_tf_idf_vector = self.transformer.transform(word_count_vector)
 
@@ -124,7 +122,6 @@ if __name__ == '__main__':
     
     corpus = list(abstracts['text'])
     paper_ids = list(abstracts['paper_id'])
-    print(corpus)
 
     cv = CountVectorizer(stop_words=stop_words)
 
