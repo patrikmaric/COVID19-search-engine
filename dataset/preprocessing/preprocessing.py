@@ -13,7 +13,8 @@ def preprocess_data(texts):
             if k!='text':
                 d.update({k: sentence[k]})
             else:
-                stem_sentence = word_stem(sentence[k])
+                filtered_sent=remove_stop_words(sentence[k])
+                stem_sentence = word_stem(filtered_sent)
                 d.update({k: stem_sentence})
         sentences.append(d)
     return pd.DataFrame(sentences) 
@@ -35,4 +36,5 @@ def num_to_word(sentece):
     pass
 
 def remove_stop_words(sentence):
-    pass
+    sentence=' '.join([word for word in sentence.split() if word.lower() not in cachedStopWords])
+    return sentence
