@@ -1,7 +1,9 @@
 import pandas as pd
 from nltk.stem import PorterStemmer
 from nltk import word_tokenize
+from nltk.corpus import stopwords
 
+cachedStopWords = stopwords.words("english")
 
 #TODO: Add removing punctuation, convert numbers to words, removing stop words ...
 def preprocess_data(texts):
