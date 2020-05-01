@@ -6,6 +6,8 @@ Group project assignment for [Text Analysis and Retrieval](https://www.fer.unizg
 
 Bla bla bla...  [COVID-19 Open Research Dataset Challenge (CORD-19)](https://www.kaggle.com/allen-institute-for-ai/CORD-19-research-challenge)
 
+Overleaf project:
+https://www.overleaf.com/5177965793vszhhgptvchn
 
 Literature:
 * https://arxiv.org/abs/1507.07998
