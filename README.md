@@ -6,6 +6,8 @@ Group project assignment for [Text Analysis and Retrieval](https://www.fer.unizg
 
 Bla bla bla...  [COVID-19 Open Research Dataset Challenge (CORD-19)](https://www.kaggle.com/allen-institute-for-ai/CORD-19-research-challenge)
 
+Overleaf project:
+https://www.overleaf.com/5177965793vszhhgptvchn
 
 Literature:
 * https://arxiv.org/abs/1507.07998
@@ -17,3 +19,5 @@ Literature:
 * https://www.sciencedirect.com/science/article/pii/S0169755298000956
 * http://www.techscience.com/cmc/v55n2/22893
 * https://ciir.cs.umass.edu/irbook/
+* https://mccormickml.com/2019/05/14/BERT-word-embeddings-tutorial/
+* https://hanxiao.io/2019/01/02/Serving-Google-BERT-in-Production-using-Tensorflow-and-ZeroMQ/
