@@ -10,12 +10,13 @@ from settings import data_root_path
 from dataset.util import extract_data_from_dict
 from dataset.util import join_abstract_text
 from dataset.preprocessing.preprocessing import preprocess_data
+from dataset.preprocessing.preprocessing import word_stem
 
 #from util import extract_data_from_dict
 #from util import join_abstract_text
 #from preprocessing.preprocessing import preprocess_data
-
-
+#from preprocessing.preprocessing import word_stem
+from representations import word2vector
 
 
 
@@ -96,6 +97,8 @@ class CovidDataLoader():
                     data_.append(join_abstract_text(abstract_data))
         if load_sentences:
             return CovidDataLoader.__load_sentences(data_, preprocess)
+        if not load_sentences and preprocess:
+            return pd.DataFrame(preprocess_data(data_))
         return pd.DataFrame(data_)
 
     @staticmethod
@@ -122,7 +125,12 @@ if __name__ == '__main__':
     stop_words = set(stopwords.words('english'))
     body_text_keys = ('section', 'text')
     article_paths = CovidDataLoader.load_articles_paths(data_root_path)
-    abstracts = CovidDataLoader.load_data(article_paths, offset=0, limit=10, load_sentences=True, preprocess=True)
+    abstracts = CovidDataLoader.load_data(article_paths, offset=0, limit=10000, load_sentences=False, preprocess=False)
+    #TODO: input
+    abstracts_text = list(abstracts['text'])
+    #query = word_stem("Incubation period of covid19?")
+    #a = word2vector(abstracts_text,query) #needs to send whole paragraphs
+    
 #    body_text_sents = CovidDataLoader.load_data(article_paths, key='body_text', keys=body_text_keys, offset=0,
 #                                                limit=1, load_sentences=True, preprocess=True)
 #    print(body_text_sents)

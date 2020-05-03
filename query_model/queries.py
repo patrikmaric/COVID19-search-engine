@@ -122,7 +122,7 @@ if __name__ == '__main__':
     
     corpus = list(abstracts['text'])
     paper_ids = list(abstracts['paper_id'])
-
+    
     cv = CountVectorizer(stop_words=stop_words)
 
     # transformer = TfidfTransformer(smooth_idf=True, use_idf=True)
