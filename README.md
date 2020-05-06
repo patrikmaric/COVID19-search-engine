@@ -20,4 +20,4 @@ Literature:
 * http://www.techscience.com/cmc/v55n2/22893
 * https://ciir.cs.umass.edu/irbook/
 * https://mccormickml.com/2019/05/14/BERT-word-embeddings-tutorial/
-* https://hanxiao.io/2019/01/02/Serving-Google-BERT-in-Production-using-Tensorflow-and-ZeroMQ/
+* https://github.com/UKPLab/sentence-transformers
