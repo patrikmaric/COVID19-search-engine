@@ -77,17 +77,15 @@ class BERTQueryEngine(QueryEngine):
     def __init__(self):
         super().__init__()
 
-    def fit(self, corpus, document_ids=None):
-        self.ids = document_ids
-        self.corpus = [paragraph for paragraph in corpus['text']]
-        self.corpus_embeddings = BERT_sentence_embeddings(corpus, query=False)
+    def fit(self, corpus):
+        self.corpus = corpus
+        self.corpus_embeddings = BERT_sentence_embeddings(corpus['text'], query=False)
 
     def run_query(self, query, n=5):
         if self.corpus is None:
             raise AttributeError('Model not built yet, please call the fit method before running queries!')
 
         assert type(query) == str
-            
 
         query_embedding = BERT_sentence_embeddings(query, query=True)
         similarities = np.dot(self.corpus_embeddings,query_embedding.T)  # TODO: check if this already sorts values

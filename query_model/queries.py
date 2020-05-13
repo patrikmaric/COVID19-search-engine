@@ -20,7 +20,6 @@ class QueryEngine():
 
     def __init__(self):
         self.corpus = None
-        self.ids = None
 
     def run_query(self, query, n=5):
         """
@@ -35,7 +34,7 @@ class QueryEngine():
         """
         pass
 
-    def fit(self, corpus, document_ids=None):
+    def fit(self, corpus):
         """
         Builds the query engine on the given corpus.
 
@@ -58,12 +57,11 @@ class QueryEngine():
         sims = similarities.toarray()[0]
 
         result = {
+            'id': self.corpus['id'],
             'query': query * len(sims),
             'text': self.corpus,
             'sim': sims,
         }
-        if self.ids:
-            result.update({'id': self.ids})
 
         result = pd.DataFrame(result).sort_values(by='sim', ascending=False)[:n]
 
@@ -118,10 +116,9 @@ class BOWQueryEngine(QueryEngine):
         similarities = query_vector.dot(self.corpus_vector.T)  # TODO: check if this already sorts values
         return self.__create_query_result(query, similarities, n)
 
-    def fit(self, corpus, document_ids=None):
-        self.ids = document_ids
+    def fit(self, corpus):
         self.corpus = corpus
-        word_count_vector = self.cv.fit_transform(corpus)
+        word_count_vector = self.cv.fit_transform(corpus['text'])
         self.transformer.fit(word_count_vector)
         self.corpus_vector = self.transformer.transform(word_count_vector)
 
