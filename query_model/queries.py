@@ -1,7 +1,7 @@
 from nltk.corpus import stopwords
 
 from dataset.data import CovidDataLoader, abstract_keys
-#from data import CovidDataLoader, abstract_keys
+# from data import CovidDataLoader, abstract_keys
 
 from query_model.transformers.bm25 import BM25Transformer
 from settings import data_root_path
@@ -18,11 +18,22 @@ import pandas as pd
 
 class QueryEngine():
 
-    def __init__(self, count_vectorizer, transformer):
-        self.cv = count_vectorizer
-        self.transformer = transformer
+    def __init__(self):
         self.corpus = None
         self.ids = None
+
+    def run_query(self, query, n=5):
+        """
+        Runs the given query, returns max n most similar documents from the corpus on which the model was built.
+
+        Args:
+            query: query to run
+            n: max number of results returned
+
+        Returns:
+            n(or less) most similar documents from the corpus on which the model was built
+        """
+        pass
 
     def fit(self, corpus, document_ids=None):
         """
@@ -32,11 +43,7 @@ class QueryEngine():
             corpus: list of documents to build the model on
             document_ids: optional, if given it will associate the given id's to each document given in the corpus
         """
-        self.ids = document_ids
-        self.corpus = corpus
-        word_count_vector = self.cv.fit_transform(corpus)
-        self.transformer.fit(word_count_vector)
-        self.corpus_tf_idf_vector = self.transformer.transform(word_count_vector)
+        pass
 
     def __create_query_result(self, query, similarities, n):
         """
@@ -61,27 +68,6 @@ class QueryEngine():
         result = pd.DataFrame(result).sort_values(by='sim', ascending=False)[:n]
 
         return result[result['sim'] > 0]
-
-    def run_query(self, query, n=5):
-        """
-        Runs the given query, returns max n most similar documents from the corpus on which the model was built.
-
-        Args:
-            query: query to run
-            n: max number of results returned
-
-        Returns:
-            n(or less) most similar documents from the corpus on which the model was built
-        """
-        if self.corpus is None:
-            raise AttributeError('Model not built jet, please call the fit method before running queries!')
-
-        if type(query) == str:
-            query = [query]
-        query_word_count_vector = self.cv.transform(query)
-        query_tf_idf_vector = self.transformer.transform(query_word_count_vector)
-        similarities = query_tf_idf_vector.dot(self.corpus_tf_idf_vector.T)  # TODO: check if this already sorts values
-        return self.__create_query_result(query, similarities, n)
 
     def save(self, dir_path, name):
         """
@@ -114,15 +100,42 @@ class QueryEngine():
             return query_engine
 
 
+class BOWQueryEngine(QueryEngine):
+
+    def __init__(self, count_vectorizer, transformer):
+        super().__init__()
+        self.cv = count_vectorizer
+        self.transformer = transformer
+
+    def run_query(self, query, n=5):
+        if self.corpus is None:
+            raise AttributeError('Model not built jet, please call the fit method before running queries!')
+
+        if type(query) == str:
+            query = [query]
+        query_word_count_vector = self.cv.transform(query)
+        query_vector = self.transformer.transform(query_word_count_vector)
+        similarities = query_vector.dot(self.corpus_vector.T)  # TODO: check if this already sorts values
+        return self.__create_query_result(query, similarities, n)
+
+    def fit(self, corpus, document_ids=None):
+        self.ids = document_ids
+        self.corpus = corpus
+        word_count_vector = self.cv.fit_transform(corpus)
+        self.transformer.fit(word_count_vector)
+        self.corpus_vector = self.transformer.transform(word_count_vector)
+
+
 if __name__ == '__main__':
     stop_words = set(stopwords.words('english'))
 
     article_paths = CovidDataLoader.load_articles_paths(data_root_path)
-    abstracts = CovidDataLoader.load_data(article_paths, key='abstract',offset=0, limit=1, keys=abstract_keys, load_sentences=True)
-    
+    abstracts = CovidDataLoader.load_data(article_paths, key='abstract', offset=0, limit=1, keys=abstract_keys,
+                                          load_sentences=True)
+
     corpus = list(abstracts['text'])
     paper_ids = list(abstracts['paper_id'])
-    
+
     cv = CountVectorizer(stop_words=stop_words)
 
     # transformer = TfidfTransformer(smooth_idf=True, use_idf=True)
@@ -131,9 +144,9 @@ if __name__ == '__main__':
     query_engine = QueryEngine(cv, transformer)
     query_engine.fit(corpus, paper_ids)
 
-    #query_engine.save('./', 'abstracts_query_engine2')
-    #query_engine2 = QueryEngine.load('abstracts_query_engine.dat')
+    # query_engine.save('./', 'abstracts_query_engine2')
+    # query_engine2 = QueryEngine.load('abstracts_query_engine.dat')
 
     # query = ['similar health treatment']
     query = 'LDH'
-    #query_result = query_engine2.run_query(query)
+    # query_result = query_engine2.run_query(query)

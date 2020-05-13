@@ -1,12 +1,10 @@
-from settings import data_root_path
-from dataset.data import CovidDataLoader
-
+import numpy as np
+from nltk import sent_tokenize
 from sentence_transformers import SentenceTransformer
 
-from nltk import sent_tokenize
-import pickle
-import pandas as pd
-import numpy as np
+from dataset.data import CovidDataLoader
+from query_model.queries import QueryEngine
+from settings import data_root_path
 
 abstract_keys = ('section', 'text')
 body_text_keys = ('section', 'text')
@@ -74,58 +72,17 @@ def BERT_sentence_embeddings(data, query=False):
         return normalize(np.array(corpus_embeddings).reshape(n,768))
 
 
-class QueryEngine_BERT():
+class BERTQueryEngine(QueryEngine):
 
     def __init__(self):
-        self.corpus = None
-        self.ids = None
+        super().__init__()
 
     def fit(self, corpus, document_ids=None):
-        """
-        Builds the query engine on the given corpus.
-
-        Args:
-            corpus: list of documents to build the model on
-            document_ids: optional, if given it will associate the given id's to each document given in the corpus
-        """
         self.ids = document_ids
         self.corpus = [paragraph for paragraph in corpus['text']]
         self.corpus_embeddings = BERT_sentence_embeddings(corpus, query=False)
-        
-    def __create_query_result(self, query, similarities, n):
-        """
-
-        Args:
-            similarities: sparse matrix containing cosine similarities between the query vector and documents from corpus
-            n: number of most similar documents to include in the result
-
-        Returns:
-            pandas DataFrame containing query, document, similarity
-        """
-
-        result = {
-            'query': query * len(similarities),
-            'text': self.corpus,
-            'sim': np.squeeze(similarities)
-        }
-        if self.ids:
-            result.update({'id': self.ids})
-
-        result = pd.DataFrame(result).sort_values(by='sim', ascending=False)[:n]
-
-        return result[result['sim'] > 0]
 
     def run_query(self, query, n=5):
-        """
-        Runs the given query, returns max n most similar documents from the corpus on which the model was build.
-
-        Args:
-            query: query to run
-            n: max number of results returned
-
-        Returns:
-            n(or less) most similar documents from the corpus on which the model was build
-        """
         if self.corpus is None:
             raise AttributeError('Model not built yet, please call the fit method before running queries!')
 
@@ -136,36 +93,6 @@ class QueryEngine_BERT():
         similarities = np.dot(self.corpus_embeddings,query_embedding.T)  # TODO: check if this already sorts values
         
         return self.__create_query_result(query, similarities, n)
-
-    def save(self, dir_path, name):
-        """
-        Serializes the object to file(name.dat) to the directory defined by the path.
-
-        Args:
-            dir_path: path of the directory to save the object to
-            name: name of the file without any extensions
-        """
-        pickle_path = dir_path + name + '.dat'
-        print('Writing object to %s' % pickle_path)
-        with open(pickle_path, 'wb') as f:
-            pickle.dump(self, f)
-
-    @staticmethod
-    def load(pickle_path):
-        """
-        Loads(de-serializes) QueryEngine object from the given path.
-
-        Args:
-            pickle_path: path to QueryEngine pickle
-
-        Returns:
-            QueryEngine object
-        """
-        with open(pickle_path, 'rb') as f:
-            query_engine = pickle.load(f)
-            if type(query_engine) != QueryEngine_BERT:
-                raise ValueError('Path to non QueryEngine_BERT object!')
-            return query_engine
 
 
 if __name__ == '__main__':
@@ -179,7 +106,7 @@ if __name__ == '__main__':
     paper_ids = [paper_id for paper_id in body_texts['paper_id']]
     
     
-    #query_engine = QueryEngine_BERT()
+    #query_engine = BERTQueryEngine()
     #query_engine.fit(body_texts, paper_ids)
     
     #query_engine.save('./', 'body_texts_query_engine')

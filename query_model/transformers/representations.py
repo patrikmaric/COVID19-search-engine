@@ -2,12 +2,12 @@ from nltk.tokenize import sent_tokenize, word_tokenize
 from gensim.models import Word2Vec, Doc2Vec
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
-from preprocessing.preprocessing import preprocess_data
-from preprocessing.preprocessing import word_stem
+from dataset.preprocessing.preprocessing import preprocess_data
+from dataset.preprocessing.preprocessing import word_stem
 #from tqdm.notebook import tqdm
 
 #Enters paragraph; make sentences and words to feed W2V
-def word2vector(corpus,query):
+def word2vector(corpus, query):
     par = ""
     result = 0.0
     tok_corpus = []
