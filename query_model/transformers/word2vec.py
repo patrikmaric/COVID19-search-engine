@@ -9,24 +9,14 @@ import pandas as pd
 
 import numpy as np
 
-# from tqdm.notebook import tqdm
-
 # Enters paragraph; make sentences and words to feed W2V
 #from data import CovidDataLoader
 from dataset.data import CovidDataLoader
 from query_model.queries import QueryEngine
 
-# train_corpus = whole corpus tokenized
 from settings import data_root_path
 
 
-def doc2vector(corpus, query):
-    #    model = Doc2Vec(vector_size=50, min_count=2, epochs=40)
-    #    model.build_vocab(train_corpus)
-    #    model.train(train_corpus, total_examples=model.corpus_count, epochs=model.epochs)
-    #    give paragraph as list of tokens to get vector:
-    #    vector = model.infer_vector(['only', 'you', 'can', 'prevent', 'forest', 'fires'])
-    pass
 
 
 class W2VQueryEngine(QueryEngine):
@@ -101,9 +91,7 @@ class W2VQueryEngine(QueryEngine):
 if __name__ == '__main__':
     article_paths = CovidDataLoader.load_articles_paths(data_root_path)
 
-    abstracts = CovidDataLoader.load_data(article_paths, offset=0, limit=30000, load_sentences=False, preprocess=False)
-    # TODO: input
-    # abstracts_text = list(abstracts['text'])
+    abstracts = CovidDataLoader.load_data(article_paths, key='body_text',offset=0, limit=10, load_sentences=False, preprocess=False)
     query1 = word_stem("Main risk factors for covid19")
     query2 = word_stem("Does smoking increase risks when having covid19?")
     query3 = word_stem("What is the mortality rate of covid19?")
@@ -112,10 +100,3 @@ if __name__ == '__main__':
     query_engine.fit(abstracts)
     results = query_engine.run_query(query1)
 
-    """model = build_model(abstracts_text)  # needs to send whole paragraphs
-    print("Main risk factors for covid19")
-    word2vector(abstracts_text, query1, model)
-    print("Does smoking increase risks when having covid19?")
-    word2vector(abstracts_text, query2, model)
-    print("What is the mortality rate of covid19?")
-    word2vector(abstracts_text, query3, model)"""

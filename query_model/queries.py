@@ -1,7 +1,7 @@
 from nltk.corpus import stopwords
 
 from dataset.data import CovidDataLoader, abstract_keys
-# from data import CovidDataLoader, abstract_keys
+#from data import CovidDataLoader, abstract_keys
 
 from query_model.transformers.bm25 import BM25Transformer
 from settings import data_root_path
