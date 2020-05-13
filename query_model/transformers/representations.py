@@ -36,7 +36,7 @@ def build_model(corpus):
             sent = word_stem(sent)
             tok_corpus.append(word_tokenize(sent))
     #building vocab
-    model = Word2Vec(tok_corpus,min_count=1,size=50,workers=3,window=3,sg=1)
+    model = Word2Vec(tok_corpus,min_count=1,size=50,workers=3,window=5,sg=0)
     return model
 
 ##Add up word2vec

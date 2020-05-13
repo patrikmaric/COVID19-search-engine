@@ -126,7 +126,8 @@ if __name__ == '__main__':
     stop_words = set(stopwords.words('english'))
     body_text_keys = ('section', 'text')
     article_paths = CovidDataLoader.load_articles_paths(data_root_path)
-    abstracts = CovidDataLoader.load_data(article_paths, offset=0, limit=30000, load_sentences=False, preprocess=False)
+    abstracts = CovidDataLoader.load_data(article_paths, offset=0, limit=10, load_sentences=False, preprocess=False)
+    print('abstracts', abstracts)
     #TODO: input
     abstracts_text = list(abstracts['text'])
     query1 = word_stem("Main risk factors for covid19")
