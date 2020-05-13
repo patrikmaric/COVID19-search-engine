@@ -4,22 +4,15 @@ from pathlib import Path
 import pandas as pd
 import tqdm
 from nltk import sent_tokenize
-from nltk.corpus import stopwords
 
-from settings import data_root_path
+from dataset.preprocessing.preprocessing import preprocess_data
 from dataset.util import extract_data_from_dict
 from dataset.util import join_abstract_text
-from dataset.preprocessing.preprocessing import preprocess_data
-from dataset.preprocessing.preprocessing import word_stem
-
+#from preprocessing.preprocessing import preprocess_data
 #from util import extract_data_from_dict
 #from util import join_abstract_text
-#from preprocessing.preprocessing import preprocess_data
-#from preprocessing.preprocessing import word_stem
-from representations import word2vector
-from representations import build_model
 
-
+from settings import data_root_path
 
 abstract_keys = ('section', 'text')
 body_text_keys = ('section', 'text')
@@ -46,7 +39,8 @@ class CovidDataLoader():
         return article_paths
 
     @staticmethod
-    def load_data(articles_paths, key='abstract', offset=0, limit=None, keys=abstract_keys, load_sentences=False, preprocess=False):
+    def load_data(articles_paths, key='abstract', offset=0, limit=None, keys=abstract_keys, load_sentences=False,
+                  preprocess=False):
         """
         Given the list of paths to articles json files, returns pandas DataFrame containing the info defined by the keys param.
 
@@ -120,30 +114,4 @@ class CovidDataLoader():
         if (preprocess):
             return preprocess_data(sentences)
         return pd.DataFrame(sentences)
-    
 
-if __name__ == '__main__':
-    stop_words = set(stopwords.words('english'))
-    body_text_keys = ('section', 'text')
-    article_paths = CovidDataLoader.load_articles_paths(data_root_path)
-    abstracts = CovidDataLoader.load_data(article_paths, offset=0, limit=10, load_sentences=False, preprocess=False)
-    print('abstracts', abstracts)
-    #TODO: input
-    abstracts_text = list(abstracts['text'])
-    query1 = word_stem("Main risk factors for covid19")
-    query2 = word_stem("Does smoking increase risks when having covid19?")
-    query3 = word_stem("What is the mortality rate of covid19?")
-    model = build_model(abstracts_text) #needs to send whole paragraphs
-    print("Main risk factors for covid19")
-    word2vector(abstracts_text,query1,model)
-    print("Does smoking increase risks when having covid19?")
-    word2vector(abstracts_text,query2,model)
-    print("What is the mortality rate of covid19?")
-    word2vector(abstracts_text,query3,model)
-    
-    
-    
-#    body_text_sents = CovidDataLoader.load_data(article_paths, key='body_text', keys=body_text_keys, offset=0,
-#                                                limit=10, load_sentences=False, preprocess=True)
-#    body_text = list(body_text_sents['text'])
-#    print(body_text)
