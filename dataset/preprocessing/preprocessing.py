@@ -5,7 +5,7 @@ from nltk.corpus import stopwords
 
 cachedStopWords = stopwords.words("english")
 
-#TODO: Add removing punctuation, convert numbers to words, removing stop words ...
+#TODO: convert numbers to words ...
 #TODO: if we have word-number, remove -, it happens in covid-19 and it will be removed in remove_punctuation
 def preprocess_data(texts):
     sentences = []
@@ -16,8 +16,10 @@ def preprocess_data(texts):
             if k!='text':
                 d.update({k: sentence[k]})
             else:
-                filtered_sent=remove_stop_words(sentence[k])
-                stem_sentence = word_stem(filtered_sent)
+#                filtered_sent=remove_stop_words(sentence[k])
+#                stem_sentence = word_stem(filtered_sent)
+#                d.update({k: stem_sentence})
+                stem_sentence = word_stem(sentence[k])
                 d.update({k: stem_sentence})
         sentences.append(d)
     return pd.DataFrame(sentences) 
@@ -47,6 +49,7 @@ def num_to_word(sentece):
 #def remove_stop_words(tokens):
 #    tokens = [w for w in tokens if w not in stopwords.words('english')]
 #    return tokens
+    
 def remove_stop_words(sentence):
     sentence=' '.join([word for word in sentence.split() if word.lower() not in cachedStopWords])
     return sentence
