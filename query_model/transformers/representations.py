@@ -7,9 +7,28 @@ from preprocessing.preprocessing import word_stem
 #from tqdm.notebook import tqdm
 
 #Enters paragraph; make sentences and words to feed W2V
-def word2vector(corpus,query):
+def word2vector(corpus,query,model):
     par = ""
     result = 0.0
+    query_vec = get_paragraph_embedding(model,query).reshape(1,-1)
+    for paragraph in corpus:
+        paragraph_vec = get_paragraph_embedding(model, paragraph).reshape(1,-1)
+        cos_lib = cos_similarity(paragraph_vec, query_vec)
+        if cos_lib > result:
+            result = cos_lib
+            par = paragraph
+    print('par',par)
+    print('res',result)
+
+
+def fit(corpus):
+        pass
+    
+    
+def cos_similarity(par_vec, query_vec):
+        return cosine_similarity(par_vec, query_vec)[0][0]
+    
+def build_model(corpus):
     tok_corpus = []
     for paragraph in corpus:
         senten = sent_tokenize(paragraph)
@@ -18,15 +37,6 @@ def word2vector(corpus,query):
             tok_corpus.append(word_tokenize(sent))
     #building vocab
     model = Word2Vec(tok_corpus,min_count=1,size=50,workers=3,window=3,sg=1)
-    query_vec = get_paragraph_embedding(model,query).reshape(1,-1)
-    for paragraph in corpus:
-        paragraph_vec = get_paragraph_embedding(model, paragraph).reshape(1,-1)
-        cos_lib = cosine_similarity(paragraph_vec, query_vec)[0][0]
-        if cos_lib > result:
-            result = cos_lib
-            par = paragraph
-#    print('par',par)
-#    print('res',result)
     return model
 
 ##Add up word2vec

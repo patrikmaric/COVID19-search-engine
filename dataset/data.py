@@ -17,6 +17,7 @@ from dataset.preprocessing.preprocessing import word_stem
 #from preprocessing.preprocessing import preprocess_data
 #from preprocessing.preprocessing import word_stem
 from representations import word2vector
+from representations import build_model
 
 
 
@@ -125,12 +126,23 @@ if __name__ == '__main__':
     stop_words = set(stopwords.words('english'))
     body_text_keys = ('section', 'text')
     article_paths = CovidDataLoader.load_articles_paths(data_root_path)
-    abstracts = CovidDataLoader.load_data(article_paths, offset=0, limit=10000, load_sentences=False, preprocess=False)
+    abstracts = CovidDataLoader.load_data(article_paths, offset=0, limit=30000, load_sentences=False, preprocess=False)
     #TODO: input
     abstracts_text = list(abstracts['text'])
-    #query = word_stem("Incubation period of covid19?")
-    #a = word2vector(abstracts_text,query) #needs to send whole paragraphs
+    query1 = word_stem("Main risk factors for covid19")
+    query2 = word_stem("Does smoking increase risks when having covid19?")
+    query3 = word_stem("What is the mortality rate of covid19?")
+    model = build_model(abstracts_text) #needs to send whole paragraphs
+    print("Main risk factors for covid19")
+    word2vector(abstracts_text,query1,model)
+    print("Does smoking increase risks when having covid19?")
+    word2vector(abstracts_text,query2,model)
+    print("What is the mortality rate of covid19?")
+    word2vector(abstracts_text,query3,model)
+    
+    
     
 #    body_text_sents = CovidDataLoader.load_data(article_paths, key='body_text', keys=body_text_keys, offset=0,
-#                                                limit=1, load_sentences=True, preprocess=True)
-#    print(body_text_sents)
+#                                                limit=10, load_sentences=False, preprocess=True)
+#    body_text = list(body_text_sents['text'])
+#    print(body_text)
