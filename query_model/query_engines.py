@@ -120,8 +120,9 @@ class BOWQueryEngine(QueryEngine):
 # INPUT: abstracts --- pd.Dataframe type, query --- preprocessed string
 class W2VQueryEngine(QueryEngine):
 
-    def __init__(self):
+    def __init__(self, w2v_params):
         super().__init__()
+        self.w2v_params = w2v_params
 
     def fit(self, corpus, text_column='preprocessed_text'):
         self.corpus = corpus
@@ -147,7 +148,7 @@ class W2VQueryEngine(QueryEngine):
                 for sent in paragraph:
                     tok_corpus.append(word_tokenize(sent))
         # building vocab
-        self.w2v = Word2Vec(tok_corpus, min_count=1, size=50, workers=3, window=3, sg=1)
+        self.w2v = Word2Vec(tok_corpus, **self.w2v_params)
 
     def __build_paragraph_embeddings(self, text_column):
         vectors = []
@@ -188,8 +189,9 @@ class W2VQueryEngine(QueryEngine):
 # INPUT: pd.Dataframe - abstracts; query - string
 class D2VQueryEngine(QueryEngine):
 
-    def __init__(self):
+    def __init__(self, d2v_params):
         super().__init__()
+        self.d2v_params = d2v_params
 
     def fit(self, corpus, text_column='preprocessed_text'):
         self.corpus = corpus
@@ -230,8 +232,7 @@ class D2VQueryEngine(QueryEngine):
                         element.remove('.')
             tok_corpus += [TaggedDocument(words=par_words[j], tags=tags[j]) for j in range(len(par_words))]
         # building vocab
-        self.d2v = Doc2Vec(dm=0, vector_size=300, min_count=5, negative=5, hs=0, sample=0, epochs=400,
-                           window=15)  # it was 2, but it says that it works better with min_count=5
+        self.d2v = Doc2Vec(dm=0, **self.d2v_params)  # it was 2, but it says that it works better with min_count=5
         self.d2v.build_vocab(tok_corpus)
         self.d2v.train(tok_corpus, total_examples=self.d2v.corpus_count, epochs=self.d2v.epochs)
 
