@@ -52,10 +52,11 @@ def word_stem(sentences,q):
     return '. '.join(stem_sentences) + '.'
 
 
-def remove_too_short(tokens):
+def remove_too_short(tokens,q):
     new_tokens = []
-    if len(tokens) < 5:
-        return new_tokens
+    if not q:
+        if len(tokens) < 5:
+            return new_tokens
     for w in tokens:
         if len(w) > 2:
             new_tokens.append(w)

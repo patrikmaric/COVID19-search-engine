@@ -56,7 +56,7 @@ class D2VQueryEngine(QueryEngine):
                         element.remove('.')
             tok_corpus+=[TaggedDocument(words=par_words[j], tags=tags[j]) for j in range(len(par_words))]
         # building vocab
-        self.d2v = Doc2Vec(dm=0, vector_size=300, min_count=5, negative=5, hs=0, sample=0, epochs=40) #it was 2, but it says that it works better with min_count=5
+        self.d2v = Doc2Vec(dm=0, vector_size=300, min_count=5, negative=5, hs=0, sample=0, epochs=400, window=15) #it was 2, but it says that it works better with min_count=5
         self.d2v.build_vocab(tok_corpus)
         self.d2v.train(tok_corpus, total_examples=self.d2v.corpus_count, epochs=self.d2v.epochs)
         
