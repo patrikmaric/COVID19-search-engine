@@ -86,7 +86,7 @@ class W2VQueryEngine(QueryEngine):
 if __name__ == '__main__':
     article_paths = CovidDataLoader.load_articles_paths(data_root_path)
 
-    abstracts = CovidDataLoader.load_data(article_paths, key='body_text',offset=0, limit=1, load_sentences=False, preprocess=True, q=False)
+    abstracts = CovidDataLoader.load_data(article_paths, key='body_text',offset=0, limit=100, load_sentences=False, preprocess=True, q=False)
     abstracts['preprocessed_text'] = abstracts['preprocessed_text'].str.replace('.','')
     
     inserted_query = "Main risk factors for covid-19"
@@ -95,9 +95,9 @@ if __name__ == '__main__':
     
     
 
-    query_engine = W2VQueryEngine()
-    
- 
-    query_engine.fit(abstracts)
-    results = query_engine.run_query(inserted_query)
+#    query_engine = W2VQueryEngine()
+#    
+# 
+#    query_engine.fit(abstracts)
+#    results = query_engine.run_query(inserted_query)
 

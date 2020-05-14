@@ -4,6 +4,7 @@ from nltk import sent_tokenize,word_tokenize
 from nltk.corpus import stopwords
 from num2words import num2words 
 import re
+import string  
 
 cachedStopWords = stopwords.words("english")
 
@@ -75,7 +76,11 @@ def num_to_word(tokens):
     new_tokens = []
     patt = re.compile("^\d+\.$")
     for w in tokens:
-        if w.isnumeric():
+        flag = True
+        for ch in w:
+            if ch not in string.printable:
+                flag = False
+        if w.isnumeric() and  flag:
             new_tokens.append(num2words(w))
         elif bool(patt.match(w)):
 #            new_tokens.append(num2words(w.replace('.',''),'ordinal_num'))  #if we need 15. = fifteenth
