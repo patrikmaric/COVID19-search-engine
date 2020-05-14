@@ -40,7 +40,7 @@ class CovidDataLoader():
 
     @staticmethod
     def load_data(articles_paths, key='abstract', offset=0, limit=None, keys=abstract_keys, load_sentences=False,
-                  preprocess=False):
+                  preprocess=False, q=False):
         """
         Given the list of paths to articles json files, returns pandas DataFrame containing the info defined by the keys param.
 
@@ -91,19 +91,18 @@ class CovidDataLoader():
                 if key == 'abstract' and abstract_data != []:
                     data_.append(join_abstract_text(abstract_data))
         if load_sentences:
-            return CovidDataLoader.__load_sentences(data_, preprocess)
+            return CovidDataLoader.__load_sentences(data_, preprocess,q)
         if not load_sentences and preprocess:
-            return pd.DataFrame(preprocess_data(data_))
+            return pd.DataFrame(preprocess_data(data_, q))
         return pd.DataFrame(data_)
 
     @staticmethod
-    def __load_sentences(texts, preprocess):
+    def __load_sentences(texts, preprocess,q):
         sentences = []
         for text in texts:
             sents = sent_tokenize(text['text'])
 
             for i in range(len(sents)):
-                # TODO: probaj krace rec izbaciti...
                 """ls = len(sents[i].split())
                 print(sents[i][-1])
                 """
@@ -112,6 +111,6 @@ class CovidDataLoader():
                 sent['position'] = i
                 sentences.append(sent)
         if (preprocess):
-            return preprocess_data(sentences)
+            return preprocess_data(sentences,q)
         return pd.DataFrame(sentences)
 

@@ -1,40 +1,38 @@
 from nltk.tokenize import sent_tokenize, word_tokenize
-from gensim.models import Word2Vec, Doc2Vec
+from gensim.models import Doc2Vec
 from gensim.models.doc2vec import TaggedDocument
 import numpy as np
-from sklearn.metrics.pairwise import cosine_similarity
-from preprocessing.preprocessing import preprocess_data
-from preprocessing.preprocessing import word_stem
+from preprocessing.preprocessing import preprocess_query
 
 import pandas as pd
 
-import numpy as np
-
-# Enters paragraph; make sentences and words to feed W2V
 #from data import CovidDataLoader
 from dataset.data import CovidDataLoader
-#from query_model.queries import QueryEngine
+from query_model.queries import QueryEngine
 
 from settings import data_root_path
 
 
-#TODO: CHECK EVERYTHING
+#requires preprocessed text; shouldn't load sentences
+#INPUT: pd.Dataframe - abstracts; query - string
 class D2VQueryEngine(QueryEngine):
 
     def __init__(self):
         super().__init__()
 
     def fit(self, corpus):
-        self.corpus = corpus  # expect pd.DataFrame
+        self.corpus = corpus
         self.__build_d2v()
         self.__build_paragraph_embeddings()
 
-    def run_query(self, query, n=5):
+    def run_query(self, query, n=5, q=True):
+        query = preprocess_query(query, q)[0]
         query_tokens = []
         senten = sent_tokenize(query)
         for sent in senten:
-            sent = word_stem(sent)
-            query_tokens += word_tokenize(sent)
+            tok = word_tokenize(sent)
+            tok.remove('.')
+            query_tokens += tok
         query_vector = self.d2v.infer_vector(query_tokens).reshape(1,-1)
         n1 = np.linalg.norm(query_vector)
         qvn = np.divide(query_vector, n1)
@@ -46,16 +44,17 @@ class D2VQueryEngine(QueryEngine):
 
     def __build_d2v(self):
         tok_corpus = []
-        tags = []
-        words = []
-        for i,paragraph in enumerate(self.corpus['text']):
-            tags += str(i)
+        for paragraph in self.corpus['preprocessed_text']:
             sentn = sent_tokenize(paragraph)
             par_words = []
-            for sent in sentn:
-                par_words += word_tokenize(word_stem(sent))
-            words.append(par_words)
-        tok_corpus+=[TaggedDocument(words=words[i], tags=tags[i]) for i in range(len(words))] ##CHECK
+            tags = []
+            for i,sent in enumerate(sentn):            
+                tags += str(i)
+                par_words.append(word_tokenize(sent))
+                for element in par_words:
+                    if '.' in element:
+                        element.remove('.')
+            tok_corpus+=[TaggedDocument(words=par_words[j], tags=tags[j]) for j in range(len(par_words))]
         # building vocab
         self.d2v = Doc2Vec(dm=0, vector_size=300, min_count=5, negative=5, hs=0, sample=0, epochs=40) #it was 2, but it says that it works better with min_count=5
         self.d2v.build_vocab(tok_corpus)
@@ -63,12 +62,14 @@ class D2VQueryEngine(QueryEngine):
         
     def __build_paragraph_embeddings(self):
         vectors = []
-        for element in self.corpus['text']:
+        for element in self.corpus['preprocessed_text']:
             element_tokens = []
             senten = sent_tokenize(element)
             for sent in senten:
-                sent = word_stem(sent)
-                element_tokens += word_tokenize(sent)
+                words = word_tokenize(sent)
+                if '.' in words:
+                    words.remove('.')
+                element_tokens += words
             element_vec = self.d2v.infer_vector(element_tokens).reshape(1, -1)
             vectors.append(element_vec[0])
         self.paragraph_vectors = np.array(vectors)
@@ -81,19 +82,19 @@ class D2VQueryEngine(QueryEngine):
             'text': self.corpus['text'],
             'sim': similarities,
         }
-
         result = pd.DataFrame(result).sort_values(by='sim', ascending=False)[:n]
 
         return result[result['sim'] > 0]
 
 if __name__ == '__main__':
     article_paths = CovidDataLoader.load_articles_paths(data_root_path)
+    abstracts = CovidDataLoader.load_data(article_paths,key='body_text', offset=0, limit=10, load_sentences=False, preprocess=True, q=False)
 
-    abstracts = CovidDataLoader.load_data(article_paths,key='body_text', offset=23000, limit=10, load_sentences=False, preprocess=False)
-    query1 = word_stem("Main risk factors of covid19")
-    query2 = word_stem("Does smoking increase risks when having covid19?")
-    query3 = word_stem("What is the mortality rate of covid19?")
+    query1 = "Main risk factors of covid19"
+#    query2 = word_stem("Does smoking increase risks when having covid19?")
+#    query3 = word_stem("What is the mortality rate of covid19?")
 
     query_engine = D2VQueryEngine()
+    
     query_engine.fit(abstracts)
     results = query_engine.run_query(query1)

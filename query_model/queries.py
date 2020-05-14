@@ -127,7 +127,7 @@ if __name__ == '__main__':
     stop_words = set(stopwords.words('english'))
 
     article_paths = CovidDataLoader.load_articles_paths(data_root_path)
-    abstracts = CovidDataLoader.load_data(article_paths, key='abstract', offset=0, limit=1, keys=abstract_keys,
+    abstracts = CovidDataLoader.load_data(article_paths, key='abstract', offset=0, limit=3, keys=abstract_keys,
                                           load_sentences=True)
 
     corpus = list(abstracts['text'])

@@ -1,43 +1,54 @@
 import pandas as pd
 from nltk.stem import PorterStemmer
-from nltk import word_tokenize
+from nltk import sent_tokenize,word_tokenize
 from nltk.corpus import stopwords
 from num2words import num2words 
 import re
 
 cachedStopWords = stopwords.words("english")
 
-def preprocess_data(texts):
+
+##if q=True, don't remove paragraphs with less than 2 sentences
+
+def preprocess_data(texts, q):  #requires json format
     sentences = []
-    for sentence in texts:
+    for paragraph in texts:
         d = {}
         stem_sentence = []
-        for k in sentence.keys():
+        for k in paragraph.keys():
             if k != 'text':
-                d.update({k: sentence[k]})
+                d.update({k: paragraph[k]})
             else:
                 #                filtered_sent=remove_stop_words(sentence[k])
                 #                stem_sentence = word_stem(filtered_sent)
                 #                d.update({k: stem_sentence})
-                stem_sentence = word_stem(sentence[k])
-                d.update({k: stem_sentence})
+                d.update({k: paragraph[k]})
+                stem_sentence = word_stem(paragraph[k],q)
+                d['preprocessed_text'] = stem_sentence
         sentences.append(d)
-    return pd.DataFrame(sentences)
+        temp = pd.DataFrame(sentences)
+    return temp[temp['preprocessed_text'] != '']
 
 
-def word_stem(sentence):
+def word_stem(sentences,q):
     porter = PorterStemmer()
-    stem_sentence = []
-    word_tokens = word_tokenize(sentence)
-    word_tokens = remove_punctuation(word_tokens)
-    word_tokens = num_to_word(word_tokens)
-    word_tokens = remove_too_short(word_tokens)
-    word_tokens = remove_stop_words(word_tokens)
-    for word in word_tokens:
-        stem_sentence.append(porter.stem(word))
-        stem_sentence.append(' ')
-    stem_sentence = ''.join(stem_sentence)
-    return stem_sentence
+    stem_sentences = []
+    sentences = sent_tokenize(sentences)
+    if not q:
+        if len(sentences) < 2:
+            return ''
+    for sent in sentences:
+        stem_sentence = []
+        word_tokens = word_tokenize(sent)
+        word_tokens = remove_punctuation(word_tokens)
+        word_tokens = num_to_word(word_tokens)
+        word_tokens = remove_too_short(word_tokens)
+        word_tokens = remove_stop_words(word_tokens)
+        for word in word_tokens:
+            stem_sentence.append(porter.stem(word))
+            stem_sentence.append(' ')
+        stem_sentences.append(''.join(stem_sentence))
+    return '. '.join(stem_sentences) + '.'
 
 
 def remove_too_short(tokens):
@@ -78,6 +89,8 @@ def remove_stop_words(tokens):
     tokens = [w for w in tokens if w not in stopwords.words('english')]
     return tokens
 
+def preprocess_query(query, q):
+    return list(preprocess_data([{'text': query}],q)['preprocessed_text'].replace('.',''))
 
 """def remove_stop_words(sentence):
     sentence = ' '.join([word for word in sentence.split() if word.lower() not in cachedStopWords])
