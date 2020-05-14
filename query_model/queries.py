@@ -6,7 +6,7 @@ from dataset.data import CovidDataLoader, abstract_keys
 from query_model.transformers.bm25 import BM25Transformer
 from settings import data_root_path
 
-from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 
 import pickle
 
@@ -57,9 +57,9 @@ class QueryEngine():
         sims = similarities.toarray()[0]
 
         result = {
-            'id': self.corpus['id'],
-            'query': query * len(sims),
-            'text': self.corpus,
+            'id': self.corpus['paper_id'],
+            'query': query * len(self.corpus),
+            'text': self.corpus['text'],
             'sim': sims,
         }
 
@@ -114,7 +114,7 @@ class BOWQueryEngine(QueryEngine):
         query_word_count_vector = self.cv.transform(query)
         query_vector = self.transformer.transform(query_word_count_vector)
         similarities = query_vector.dot(self.corpus_vector.T)  # TODO: check if this already sorts values
-        return self.__create_query_result(query, similarities, n)
+        return self._QueryEngine__create_query_result(query, similarities, n)
 
     def fit(self, corpus):
         self.corpus = corpus
@@ -127,23 +127,21 @@ if __name__ == '__main__':
     stop_words = set(stopwords.words('english'))
 
     article_paths = CovidDataLoader.load_articles_paths(data_root_path)
-    abstracts = CovidDataLoader.load_data(article_paths, key='abstract', offset=0, limit=1, keys=abstract_keys,
+    abstracts = CovidDataLoader.load_data(article_paths, key='abstract', offset=60000, limit=1000, keys=abstract_keys,
                                           load_sentences=True)
 
-    corpus = list(abstracts['text'])
-    paper_ids = list(abstracts['paper_id'])
 
     cv = CountVectorizer(stop_words=stop_words)
 
-    # transformer = TfidfTransformer(smooth_idf=True, use_idf=True)
+    transformer = TfidfTransformer(smooth_idf=True, use_idf=True)
     transformer = BM25Transformer()
 
-    query_engine = QueryEngine(cv, transformer)
-    query_engine.fit(corpus, paper_ids)
+    query_engine = BOWQueryEngine(cv, transformer)
+    query_engine.fit(abstracts)
 
     # query_engine.save('./', 'abstracts_query_engine2')
     # query_engine2 = QueryEngine.load('abstracts_query_engine.dat')
 
     # query = ['similar health treatment']
     query = 'LDH'
-    # query_result = query_engine2.run_query(query)
+    query_result = query_engine.run_query(query)
