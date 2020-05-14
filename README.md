@@ -21,3 +21,4 @@ Literature:
 * https://ciir.cs.umass.edu/irbook/
 * https://mccormickml.com/2019/05/14/BERT-word-embeddings-tutorial/
 * https://github.com/UKPLab/sentence-transformers
+* https://www.aclweb.org/anthology/W16-1609.pdf
