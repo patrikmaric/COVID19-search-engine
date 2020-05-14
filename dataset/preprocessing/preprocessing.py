@@ -43,12 +43,14 @@ def word_stem(sentences,q):
         word_tokens = word_tokenize(sent)
         word_tokens = remove_punctuation(word_tokens)
         word_tokens = num_to_word(word_tokens)
-        word_tokens = remove_too_short(word_tokens)
+        word_tokens = remove_too_short(word_tokens,q)
         word_tokens = remove_stop_words(word_tokens)
-        for word in word_tokens:
-            stem_sentence.append(porter.stem(word))
-            stem_sentence.append(' ')
-        stem_sentences.append(''.join(stem_sentence))
+        if (len(word_tokens) > 0):
+            for word in word_tokens:
+                stem_sentence.append(porter.stem(word))
+                stem_sentence.append(' ')
+        if (len(stem_sentence) > 0):
+            stem_sentences.append(''.join(stem_sentence))
     return '. '.join(stem_sentences) + '.'
 
 

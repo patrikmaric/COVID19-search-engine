@@ -44,12 +44,15 @@ class D2VQueryEngine(QueryEngine):
 
     def __build_d2v(self):
         tok_corpus = []
+        cnt = 0
         for paragraph in self.corpus['preprocessed_text']:
+            cnt += 1
+            j = str(cnt)
             sentn = sent_tokenize(paragraph)
             par_words = []
             tags = []
-            for i,sent in enumerate(sentn):            
-                tags += str(i)
+            for i,sent in enumerate(sentn):  
+                tags.append(j + str(i))
                 par_words.append(word_tokenize(sent))
                 for element in par_words:
                     if '.' in element:
@@ -88,8 +91,8 @@ class D2VQueryEngine(QueryEngine):
 
 if __name__ == '__main__':
     article_paths = CovidDataLoader.load_articles_paths(data_root_path)
-    abstracts = CovidDataLoader.load_data(article_paths,key='body_text', offset=0, limit=10, load_sentences=False, preprocess=True, q=False)
-
+    abstracts = CovidDataLoader.load_data(article_paths,key='abstract', offset=0, limit=100, load_sentences=False, preprocess=True, q=False)
+    print(abstracts)
     query1 = "Main risk factors of covid19"
 #    query2 = word_stem("Does smoking increase risks when having covid19?")
 #    query3 = word_stem("What is the mortality rate of covid19?")
