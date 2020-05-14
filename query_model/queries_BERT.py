@@ -30,7 +30,7 @@ def normalize(embeddings):
         return embeddings / np.linalg.norm(embeddings)
 
 
-def BERT_sentence_embeddings(data, query=False):
+def BERT_sentence_embeddings(data, text_column=None, query=False):
     """
     Input:
         corpus: DataFrame containing information about paragraphs : paper_id, section, text
@@ -61,8 +61,8 @@ def BERT_sentence_embeddings(data, query=False):
     if query:
         return normalize(np.array(model.encode([data])).reshape(1, 768))
 
-    else:
-        text_paragraphs = [paragraph for paragraph in list(data['text'])]
+    elif text_column:
+        text_paragraphs = [paragraph for paragraph in list(data[text_column])]
         n = len(text_paragraphs)
 
         corpus_embeddings = []
@@ -74,15 +74,16 @@ def BERT_sentence_embeddings(data, query=False):
 
         return normalize(np.array(corpus_embeddings).reshape(n, 768))
 
+    raise AttributeError('Input must be either a query, or training data!')
 
 class BERTQueryEngine(QueryEngine):
 
     def __init__(self):
         super().__init__()
 
-    def fit(self, corpus):
+    def fit(self, corpus, text_column='preprocessed_text'):
         self.corpus = corpus
-        self.corpus_embeddings = BERT_sentence_embeddings(corpus, query=False)
+        self.corpus_embeddings = BERT_sentence_embeddings(corpus, text_column, query=False)
 
     def run_query(self, query, n=5):
         if self.corpus is None:
@@ -120,9 +121,6 @@ class BERTQueryEngine(QueryEngine):
 
 
 if __name__ == '__main__':
-    # preferably run on GPU, sentence transformers model encodes up to 1300 sentences/s
-    # much slower on CPU, between 30 and 50 sentences/s
-
     article_paths = CovidDataLoader.load_articles_paths(data_root_path)
     abstracts = CovidDataLoader.load_data(article_paths, offset=0, limit=None, load_sentences=False, preprocess=False)
     body_texts = CovidDataLoader.load_data(article_paths, key='body_text', keys=body_text_keys, offset=0, limit=None,

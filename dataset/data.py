@@ -8,9 +8,9 @@ from nltk import sent_tokenize
 from dataset.preprocessing.preprocessing import preprocess_data
 from dataset.util import extract_data_from_dict
 from dataset.util import join_abstract_text
-#from preprocessing.preprocessing import preprocess_data
-#from util import extract_data_from_dict
-#from util import join_abstract_text
+# from preprocessing.preprocessing import preprocess_data
+# from util import extract_data_from_dict
+# from util import join_abstract_text
 
 from settings import data_root_path
 
@@ -91,13 +91,13 @@ class CovidDataLoader():
                 if key == 'abstract' and abstract_data != []:
                     data_.append(join_abstract_text(abstract_data))
         if load_sentences:
-            return CovidDataLoader.__load_sentences(data_, preprocess,q)
+            return CovidDataLoader.__load_sentences(data_, preprocess, q)
         if not load_sentences and preprocess:
             return pd.DataFrame(preprocess_data(data_, q))
         return pd.DataFrame(data_)
 
     @staticmethod
-    def __load_sentences(texts, preprocess,q):
+    def __load_sentences(texts, preprocess, q):
         sentences = []
         for text in texts:
             sents = sent_tokenize(text['text'])
@@ -111,6 +111,5 @@ class CovidDataLoader():
                 sent['position'] = i
                 sentences.append(sent)
         if (preprocess):
-            return preprocess_data(sentences,q)
+            return preprocess_data(sentences, q)
         return pd.DataFrame(sentences)
-

@@ -1,7 +1,7 @@
 from nltk.tokenize import word_tokenize
 from gensim.models import Word2Vec
 import numpy as np
-from preprocessing.preprocessing import preprocess_query
+from dataset.preprocessing.preprocessing import preprocess_query
 
 import pandas as pd
 
@@ -14,7 +14,6 @@ from query_model.queries import QueryEngine
 from settings import data_root_path
 
 
-
 #Expects preprocessed text -no preprocessing done here;
 #INPUT: abstracts --- pd.Dataframe type, query --- preprocessed string
 class W2VQueryEngine(QueryEngine):
@@ -22,10 +21,10 @@ class W2VQueryEngine(QueryEngine):
     def __init__(self):
         super().__init__()
 
-    def fit(self, corpus):
+    def fit(self, corpus, text_column='preprocessed_text'):
         self.corpus = corpus
-        self.__build_w2v()
-        self.__build_paragraph_embeddings()
+        self.__build_w2v(text_column)
+        self.__build_paragraph_embeddings(text_column)
 
     def run_query(self, query, n=5, q=True):
         query = preprocess_query(query, q)[0]
@@ -39,9 +38,9 @@ class W2VQueryEngine(QueryEngine):
         similarities = qvn.dot(pvn.T)
         return self.__create_query_result(query, similarities, n)
 
-    def __build_w2v(self):
+    def __build_w2v(self, text_column):
         tok_corpus = []
-        for paragraph in self.corpus['preprocessed_text']:
+        for paragraph in self.corpus[text_column]:
             if paragraph != '':
                 for sent in paragraph:
                     tok_corpus.append(word_tokenize(sent))
@@ -49,9 +48,9 @@ class W2VQueryEngine(QueryEngine):
         self.w2v = Word2Vec(tok_corpus, min_count=1, size=50, workers=3, window=3, sg=1)
         
 
-    def __build_paragraph_embeddings(self):
+    def __build_paragraph_embeddings(self, text_column):
         vectors = []
-        for element in self.corpus['preprocessed_text']:
+        for element in self.corpus[text_column]:
             element_vec = self.get_paragraph_embedding(element).reshape(1, -1)
             vectors.append(element_vec[0])
 
@@ -92,8 +91,7 @@ if __name__ == '__main__':
     inserted_query = "Main risk factors for covid-19"
     inserted_query2 = "Does smoking increase risks when having covid19?"
     inserted_query3 = "What is the mortality rate of covid19?"
-    
-    
+
 
 #    query_engine = W2VQueryEngine()
 #    

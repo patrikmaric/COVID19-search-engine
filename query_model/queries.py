@@ -1,20 +1,8 @@
-from nltk.corpus import stopwords
-
-from dataset.data import CovidDataLoader, abstract_keys
-#from data import CovidDataLoader, abstract_keys
-
-from query_model.transformers.bm25 import BM25Transformer
-from settings import data_root_path
-
-from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
-
 import pickle
 
 import pandas as pd
 
-
-# TODO: short(wrongly separated) sentences are the current problem...
-
+from dataset.preprocessing.preprocessing import filter_by_key_words, filter_by_language, covid_key_words
 
 class QueryEngine():
 
@@ -34,7 +22,7 @@ class QueryEngine():
         """
         pass
 
-    def fit(self, corpus):
+    def fit(self, corpus, text_column='preprocessed_text'):
         """
         Builds the query engine on the given corpus.
 
@@ -93,8 +81,6 @@ class QueryEngine():
         """
         with open(pickle_path, 'rb') as f:
             query_engine = pickle.load(f)
-            if type(query_engine) != QueryEngine:
-                raise ValueError('Path to non QueryEngine object!')
             return query_engine
 
 
@@ -116,7 +102,7 @@ class BOWQueryEngine(QueryEngine):
         similarities = query_vector.dot(self.corpus_vector.T)  # TODO: check if this already sorts values
         return self._QueryEngine__create_query_result(query, similarities, n)
 
-    def fit(self, corpus):
+    def fit(self, corpus, text_column='preprocessed_text'):
         self.corpus = corpus
         word_count_vector = self.cv.fit_transform(corpus['text'])
         self.transformer.fit(word_count_vector)
@@ -124,13 +110,16 @@ class BOWQueryEngine(QueryEngine):
 
 
 if __name__ == '__main__':
-    stop_words = set(stopwords.words('english'))
+    """stop_words = set(stopwords.words('english'))
 
     article_paths = CovidDataLoader.load_articles_paths(data_root_path)
-    abstracts = CovidDataLoader.load_data(article_paths, key='abstract', offset=60000, limit=1000, keys=abstract_keys, load_sentences=True)
+    abstracts = CovidDataLoader.load_data(article_paths, key='abstract', offset=0, limit=None, keys=abstract_keys, load_sentences=False, preprocess=True)"""
 
+    abstracts = pd.read_csv('abstracts_data.csv')
+    covid_only = filter_by_key_words(abstracts, key_words=covid_key_words)
+    english_only = filter_by_language(covid_only)
 
-    cv = CountVectorizer(stop_words=stop_words)
+    """cv = CountVectorizer(stop_words=stop_words)
 
     transformer = TfidfTransformer(smooth_idf=True, use_idf=True)
     transformer = BM25Transformer()
@@ -143,4 +132,6 @@ if __name__ == '__main__':
 
     # query = ['similar health treatment']
     query = 'LDH'
-    query_result = query_engine.run_query(query)
+    query_result = query_engine.run_query(query)"""
+
+    

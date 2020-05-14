@@ -2,7 +2,7 @@ from nltk.tokenize import sent_tokenize, word_tokenize
 from gensim.models import Doc2Vec
 from gensim.models.doc2vec import TaggedDocument
 import numpy as np
-from preprocessing.preprocessing import preprocess_query
+from dataset.preprocessing.preprocessing import preprocess_query
 
 import pandas as pd
 
@@ -20,10 +20,10 @@ class D2VQueryEngine(QueryEngine):
     def __init__(self):
         super().__init__()
 
-    def fit(self, corpus):
+    def fit(self, corpus, text_column='preprocessed_text'):
         self.corpus = corpus
-        self.__build_d2v()
-        self.__build_paragraph_embeddings()
+        self.__build_d2v(text_column)
+        self.__build_paragraph_embeddings(text_column)
 
     def run_query(self, query, n=5, q=True):
         query = preprocess_query(query, q)[0]
@@ -42,10 +42,10 @@ class D2VQueryEngine(QueryEngine):
         similarities = qvn.dot(pvn.T)[0]
         return self.__create_query_result(query, similarities, n)
 
-    def __build_d2v(self):
+    def __build_d2v(self, text_column):
         tok_corpus = []
         cnt = 0
-        for paragraph in self.corpus['preprocessed_text']:
+        for paragraph in self.corpus[text_column]:
             cnt += 1
             j = str(cnt)
             sentn = sent_tokenize(paragraph)
@@ -63,9 +63,9 @@ class D2VQueryEngine(QueryEngine):
         self.d2v.build_vocab(tok_corpus)
         self.d2v.train(tok_corpus, total_examples=self.d2v.corpus_count, epochs=self.d2v.epochs)
         
-    def __build_paragraph_embeddings(self):
+    def __build_paragraph_embeddings(self, text_column):
         vectors = []
-        for element in self.corpus['preprocessed_text']:
+        for element in self.corpus[text_column]:
             element_tokens = []
             senten = sent_tokenize(element)
             for sent in senten:
