@@ -23,24 +23,29 @@ covid_key_words = [
 
 ##if q=True, don't remove paragraphs with less than 2 sentences
 
+def contains_key_words(text, key_words):
+    return any([x in text for x in covid_key_words])
+
+
 def preprocess_data(texts, q):  # requires json format
     sentences = []
     temp = texts
     for paragraph in tqdm(texts):
-        d = {}
-        stem_sentence = []
-        for k in paragraph.keys():
-            if k != 'text':
-                d.update({k: paragraph[k]})
-            else:
-                #                filtered_sent=remove_stop_words(sentence[k])
-                #                stem_sentence = word_stem(filtered_sent)
-                #                d.update({k: stem_sentence})
-                d.update({k: paragraph[k]})
-                stem_sentence = word_stem(paragraph[k], q)
-                d['preprocessed_text'] = stem_sentence
-        sentences.append(d)
-        temp = pd.DataFrame(sentences)
+        if 'text' in paragraph and contains_key_words(paragraph['text'].lower(), covid_key_words):
+            d = {}
+            stem_sentence = []
+            for k in paragraph.keys():
+                if k != 'text':
+                    d.update({k: paragraph[k]})
+                else:
+                    #                filtered_sent=remove_stop_words(sentence[k])
+                    #                stem_sentence = word_stem(filtered_sent)
+                    #                d.update({k: stem_sentence})
+                    d.update({k: paragraph[k]})
+                    stem_sentence = word_stem(paragraph[k], q)
+                    d['preprocessed_text'] = stem_sentence
+            sentences.append(d)
+            temp = pd.DataFrame(sentences)
     return temp[temp['preprocessed_text'] != '']
 
 
@@ -107,7 +112,7 @@ def num_to_word(tokens):
 
 
 def remove_stop_words(tokens):
-    tokens = [w for w in tokens if w not in stopwords.words('english')]
+    tokens = [w for w in tokens if w not in cachedStopWords]
     return tokens
 
 
