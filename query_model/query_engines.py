@@ -8,6 +8,10 @@ from gensim.models.doc2vec import TaggedDocument
 from nltk.tokenize import sent_tokenize, word_tokenize
 
 from dataset.preprocessing.preprocessing import preprocess_query
+#from preprocessing.preprocessing import preprocess_query
+from data import CovidDataLoader, body_text_keys
+from settings import data_root_path
+from tqdm import tqdm
 from query_model.utils import BERT_sentence_embeddings
 
 epsilon = 0.0000000001
@@ -210,7 +214,8 @@ class D2VQueryEngine(QueryEngine):
             tok = word_tokenize(sent)
             tok.remove('.')
             query_tokens += tok
-        query_vector = self.d2v.infer_vector(query_tokens).reshape(1, -1)
+        
+        query_vector = self.d2v.infer_vector(query_tokens, steps=400, alpha=0.025).reshape(1, -1)
         n1 = np.linalg.norm(query_vector)
         qvn = np.divide(query_vector, n1)
         n2 = np.linalg.norm(self.paragraph_vectors, axis=1)
@@ -236,13 +241,13 @@ class D2VQueryEngine(QueryEngine):
                         element.remove('.')
             tok_corpus += [TaggedDocument(words=par_words[j], tags=tags[j]) for j in range(len(par_words))]
         # building vocab
-        self.d2v = Doc2Vec(dm=0, **self.d2v_params)  # it was 2, but it says that it works better with min_count=5
+        self.d2v = Doc2Vec(dm=0, **self.d2v_params)
         self.d2v.build_vocab(tok_corpus)
         self.d2v.train(tok_corpus, total_examples=self.d2v.corpus_count, epochs=self.d2v.epochs)
 
     def __build_paragraph_embeddings(self, text_column):
         vectors = []
-        for element in self.corpus[text_column]:
+        for element in tqdm(self.corpus[text_column]):
             element_tokens = []
             senten = sent_tokenize(element)
             for sent in senten:
@@ -250,7 +255,7 @@ class D2VQueryEngine(QueryEngine):
                 if '.' in words:
                     words.remove('.')
                 element_tokens += words
-            element_vec = self.d2v.infer_vector(element_tokens).reshape(1, -1)
+            element_vec = self.d2v.infer_vector(element_tokens, steps=400, alpha=0.025).reshape(1, -1)
             vectors.append(element_vec[0])
         self.paragraph_vectors = np.array(vectors)
 
@@ -308,3 +313,24 @@ class BERTQueryEngine(QueryEngine):
 
         # return result
         return result[result['sim'] > 0]
+
+if __name__ == '__main__':
+    article_paths = CovidDataLoader.load_articles_paths(data_root_path)
+    texts = CovidDataLoader.load_data(article_paths, key='abstract', offset=0, limit=30000, keys=body_text_keys,
+                                      load_sentences=False, preprocess=True)
+
+    params = {
+        'min_count': 5, #5, #w2v
+        'vector_size': 300,
+        #'workers': 3,  #v2w
+        'window': 15, #3, w2v
+        'hs': 0,
+        'negative': 5,
+        'sample': 0, #ne w2v
+        'epoch':400 #ne w2v
+    }
+    
+    query_engine = D2VQueryEngine(params)
+    query_engine.fit(texts)
+    print("What is the incubation period?")
+    result = query_engine.run_query("What is the incubation period?")
