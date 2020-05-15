@@ -131,8 +131,8 @@ class W2VQueryEngine(QueryEngine):
         self.__build_paragraph_embeddings(text_column)
 
     def run_query(self, query, n=5, q=True):
-        query = preprocess_query(query, q)[0]
-        query_vector = self.get_paragraph_embedding(query)
+        preprocessed_query = preprocess_query(query, q)[0]
+        query_vector = self.get_paragraph_embedding(preprocessed_query)
         n1 = np.linalg.norm(query_vector)
         qvn = np.divide(query_vector, n1)
         n2 = np.linalg.norm(self.paragraph_vectors, axis=1)
@@ -203,9 +203,9 @@ class D2VQueryEngine(QueryEngine):
         self.__build_paragraph_embeddings(text_column)
 
     def run_query(self, query, n=5, q=True):
-        query = preprocess_query(query, q)[0]
+        preprocessed_query = preprocess_query(query, q)[0]
         query_tokens = []
-        senten = sent_tokenize(query)
+        senten = sent_tokenize(preprocessed_query)
         for sent in senten:
             tok = word_tokenize(sent)
             tok.remove('.')
