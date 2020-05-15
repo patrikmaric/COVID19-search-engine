@@ -2,7 +2,7 @@ import numpy as np
 from nltk import sent_tokenize
 from sentence_transformers import SentenceTransformer
 
-# TODO: remove possible duplicates in corpus and extremly short paragraphs
+# TODO: remove possible duplicates in corpus
 
 def normalize(embeddings):
     """

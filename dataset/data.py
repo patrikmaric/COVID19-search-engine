@@ -8,9 +8,9 @@ from nltk import sent_tokenize
 from dataset.preprocessing.preprocessing import preprocess_data
 from dataset.util import extract_data_from_dict
 from dataset.util import join_abstract_text
-# from preprocessing.preprocessing import preprocess_data
-# from util import extract_data_from_dict
-# from util import join_abstract_text
+#from preprocessing.preprocessing import preprocess_data
+#from util import extract_data_from_dict
+#from util import join_abstract_text
 
 from settings import data_root_path
 

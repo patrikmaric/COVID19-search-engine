@@ -10,6 +10,7 @@ from nltk.tokenize import sent_tokenize, word_tokenize
 from dataset.preprocessing.preprocessing import preprocess_query
 from query_model.utils import BERT_sentence_embeddings
 
+epsilon = 0.0000000001
 
 class QueryEngine():
 
@@ -132,7 +133,6 @@ class W2VQueryEngine(QueryEngine):
     def run_query(self, query, n=5, q=True):
         query = preprocess_query(query, q)[0]
         query_vector = self.get_paragraph_embedding(query)
-
         n1 = np.linalg.norm(query_vector)
         qvn = np.divide(query_vector, n1)
         n2 = np.linalg.norm(self.paragraph_vectors, axis=1)
@@ -145,7 +145,10 @@ class W2VQueryEngine(QueryEngine):
         tok_corpus = []
         for paragraph in self.corpus[text_column]:
             if paragraph != '':
-                tok_corpus.append(word_tokenize(paragraph))
+                tok = word_tokenize(paragraph)
+                while '.' in tok:
+                    tok.remove('.')
+                tok_corpus.append(tok)
         # building vocab
         self.w2v = Word2Vec(tok_corpus, **self.w2v_params)
 
@@ -160,11 +163,18 @@ class W2VQueryEngine(QueryEngine):
     ##Add up word2vec
     def get_paragraph_embedding(self, paragraph):
         word_list = word_tokenize(paragraph)
-        result_vec = np.zeros(np.shape(self.w2v[list(self.w2v.wv.vocab.keys())[0]]))
+        while '.' in word_list:
+            word_list.remove('.')
+        result_vec = np.zeros(np.shape(self.w2v[list(self.w2v.wv.vocab.keys())[0]])) + epsilon
+        cnt = 0
         for word in word_list:
             if word in self.w2v.wv.vocab.keys():
+                cnt += 1
                 result_vec += np.array(self.w2v[word])
-        return result_vec
+        if cnt > 0:
+            return result_vec/cnt
+        else:
+            return result_vec
 
     
     def __create_query_result(self, query, similarities, n):
