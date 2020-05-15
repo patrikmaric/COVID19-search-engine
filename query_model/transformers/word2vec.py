@@ -43,8 +43,7 @@ class W2VQueryEngine(QueryEngine):
         tok_corpus = []
         for paragraph in self.corpus['preprocessed_text']:
             if paragraph != '':
-                for sent in paragraph:
-                    tok_corpus.append(word_tokenize(sent))
+                tok_corpus.append(word_tokenize(paragraph))
         # building vocab
         self.w2v = Word2Vec(tok_corpus, min_count=1, size=50, workers=3, window=3, sg=1)
         
@@ -59,15 +58,9 @@ class W2VQueryEngine(QueryEngine):
 
     ##Add up word2vec
     def get_paragraph_embedding(self, paragraph):
-        word_list = []
-        for sent in paragraph:
-            word_list.append(word_tokenize(sent))
-        words = []
-        for sublist in word_list:
-            for item in sublist:
-                words.append(item)
+        word_list = word_tokenize(paragraph)
         result_vec = np.zeros(np.shape(self.w2v[list(self.w2v.wv.vocab.keys())[0]]))
-        for word in words:
+        for word in word_list:
             if word in self.w2v.wv.vocab.keys():
                 result_vec += np.array(self.w2v[word])
         return result_vec
@@ -86,7 +79,7 @@ class W2VQueryEngine(QueryEngine):
 if __name__ == '__main__':
     article_paths = CovidDataLoader.load_articles_paths(data_root_path)
 
-    abstracts = CovidDataLoader.load_data(article_paths, key='body_text',offset=0, limit=100, load_sentences=False, preprocess=True, q=False)
+    abstracts = CovidDataLoader.load_data(article_paths, key='body_text',offset=0, limit=10, load_sentences=False, preprocess=True, q=False)
     abstracts['preprocessed_text'] = abstracts['preprocessed_text'].str.replace('.','')
     
     inserted_query = "Main risk factors for covid-19"
@@ -95,9 +88,9 @@ if __name__ == '__main__':
     
     
 
-#    query_engine = W2VQueryEngine()
-#    
-# 
-#    query_engine.fit(abstracts)
+    query_engine = W2VQueryEngine()
+    
+ 
+    query_engine.fit(abstracts)
 #    results = query_engine.run_query(inserted_query)
 

@@ -59,7 +59,7 @@ class D2VQueryEngine(QueryEngine):
                         element.remove('.')
             tok_corpus+=[TaggedDocument(words=par_words[j], tags=tags[j]) for j in range(len(par_words))]
         # building vocab
-        self.d2v = Doc2Vec(dm=0, vector_size=300, min_count=5, negative=5, hs=0, sample=0, epochs=400, window=15) #it was 2, but it says that it works better with min_count=5
+        self.d2v = Doc2Vec(dm=0, vector_size=300, min_count=5, negative=5, hs=0, sample=0.00001, epochs=400, window=15) #it was 2, but it says that it works better with min_count=5
         self.d2v.build_vocab(tok_corpus)
         self.d2v.train(tok_corpus, total_examples=self.d2v.corpus_count, epochs=self.d2v.epochs)
         
@@ -91,7 +91,7 @@ class D2VQueryEngine(QueryEngine):
 
 if __name__ == '__main__':
     article_paths = CovidDataLoader.load_articles_paths(data_root_path)
-    abstracts = CovidDataLoader.load_data(article_paths,key='abstract', offset=0, limit=100, load_sentences=False, preprocess=True, q=False)
+    abstracts = CovidDataLoader.load_data(article_paths,key='abstract', offset=0, limit=30000, load_sentences=False, preprocess=True, q=False)
     print(abstracts)
     query1 = "Main risk factors of covid19"
 #    query2 = word_stem("Does smoking increase risks when having covid19?")
