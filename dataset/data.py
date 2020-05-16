@@ -93,8 +93,8 @@ class CovidDataLoader():
         if load_sentences:
             return CovidDataLoader.__load_sentences(data_, preprocess, q)
         if not load_sentences and preprocess:
-            return pd.DataFrame(preprocess_data(data_, q))
-        return pd.DataFrame(data_)
+            return pd.DataFrame(preprocess_data(data_, q)).drop_duplicates(subset='text', keep='first')
+        return pd.DataFrame(data_).drop_duplicates(subset='text', keep='first')
 
     @staticmethod
     def __load_sentences(texts, preprocess, q):
@@ -111,5 +111,5 @@ class CovidDataLoader():
                 sent['position'] = i
                 sentences.append(sent)
         if (preprocess):
-            return preprocess_data(sentences, q)
-        return pd.DataFrame(sentences)
+            return preprocess_data(sentences, q).drop_duplicates(subset='text', keep='first')
+        return pd.DataFrame(sentences).drop_duplicates(subset='text', keep='first')
