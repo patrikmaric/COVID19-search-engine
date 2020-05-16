@@ -1,6 +1,7 @@
 import numpy as np
 from nltk import sent_tokenize
 from sentence_transformers import SentenceTransformer
+from tqdm import tqdm
 
 # TODO: remove possible duplicates in corpus
 
@@ -56,7 +57,7 @@ def BERT_sentence_embeddings(data, text_column=None, query=False):
         n = len(text_paragraphs)
 
         corpus_embeddings = []
-        for paragraph in text_paragraphs:
+        for paragraph in tqdm(text_paragraphs):
             sentences = sent_tokenize(paragraph)
             sent_embeddings = normalize(
                 np.array(model.encode(sentences)).reshape(-1, 768))  # shape = no_of_sents_in_paragraph X 768
