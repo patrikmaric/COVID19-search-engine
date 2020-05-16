@@ -10,16 +10,22 @@ from langdetect import detect
 
 from tqdm import tqdm
 
-cachedStopWords = stopwords.words("english")
+research_paper_stopwords = ['introduction', 'abstract', 'section', 'edition', 'chapter',
+                            'copyright', 'preprint', 'figure']
+english_stopwords = stopwords.words("english")
+cachedStopWords = set(english_stopwords + research_paper_stopwords)
 
-covid_key_words = [
-    'covid',
-    'corona',
-    'coronavirus',
-    'sars-cov-2',
-    'severe acute respiratory syndrome'
-]
+covid_key_words=["2019", "novel coronavirus", "covid", "ncov", "wuhan"
+                 "sars-cov-2", "coronavirus", "severe acute respiratory syndrome",
+                 "corona"]
 
+#covid_key_words = [
+#    'covid',
+#    'corona',
+#    'coronavirus',
+#    'sars-cov-2',
+#    'severe acute respiratory syndrome'
+#]
 
 ##if q=True, don't remove paragraphs with less than 2 sentences
 
@@ -38,9 +44,6 @@ def preprocess_data(texts, q):  # requires json format
                 if k != 'text':
                     d.update({k: paragraph[k]})
                 else:
-                    #                filtered_sent=remove_stop_words(sentence[k])
-                    #                stem_sentence = word_stem(filtered_sent)
-                    #                d.update({k: stem_sentence})
                     d.update({k: paragraph[k]})
                     stem_sentence = word_stem(paragraph[k], q)
                     d['preprocessed_text'] = stem_sentence
@@ -160,9 +163,3 @@ def filter_by_language(data, column='text', lan='en'):
         except:
             pass
     return data.loc[wanted]
-
-
-"""def remove_stop_words(sentence):
-    sentence = ' '.join([word for word in sentence.split() if word.lower() not in cachedStopWords])
-    return sentence
-"""
