@@ -15,7 +15,10 @@ research_paper_stopwords = ['introduction', 'abstract', 'section', 'edition', 'c
 english_stopwords = stopwords.words("english")
 cachedStopWords = set(english_stopwords + research_paper_stopwords)
 
-covid_key_words=["2019", "novel coronavirus", "covid", "ncov", "wuhan"
+#covid_key_words=["2019", "novel coronavirus", "covid", "ncov", "wuhan"
+ #                "sars-cov-2", "coronavirus", "severe acute respiratory syndrome",
+ #                "corona"]  --- makla sam jer ovaj ncov ce vratit paper koji ima npr 'uncover', a 2019. ako je citiran neki rad npr. (Markotic, 2019)
+covid_key_words=["novel coronavirus", "covid", "wuhan"
                  "sars-cov-2", "coronavirus", "severe acute respiratory syndrome",
                  "corona"]
 
@@ -37,7 +40,7 @@ def preprocess_data(texts, q):  # requires json format
     sentences = []
     temp = texts
     for paragraph in tqdm(texts):
-        if 'text' in paragraph and contains_key_words(paragraph['text'].lower(), covid_key_words):
+        if 'text' in paragraph and not q and contains_key_words(paragraph['text'].lower(), covid_key_words):
             d = {}
             stem_sentence = []
             for k in paragraph.keys():
@@ -49,13 +52,32 @@ def preprocess_data(texts, q):  # requires json format
                     d['preprocessed_text'] = stem_sentence
             sentences.append(d)
             temp = pd.DataFrame(sentences)
-    return temp[temp['preprocessed_text'] != '']
+        if 'text' in paragraph and q:
+            d = {}
+            stem_sentence = []
+            for k in paragraph.keys():
+                if k != 'text':
+                    d.update({k: paragraph[k]})
+                else:
+                    d.update({k: paragraph[k]})
+                    stem_sentence = word_stem(paragraph[k], q)
+                    d['preprocessed_text'] = stem_sentence
+            sentences.append(d)
+            temp = pd.DataFrame(sentences)
+    return filter_by_language(temp[temp['preprocessed_text'] != ''])
 
 
 def word_stem(sentences, q):
     porter = PorterStemmer()
     stem_sentences = []
-    sentences = sent_tokenize(sentences)
+    new_sentences = sent_tokenize(sentences)
+    sentences = []
+    for sent in new_sentences:
+        word_tokens = word_tokenize(sent)
+        if word_tokens[-1] == '?':
+            continue
+        else:
+            sentences.append(sent)
     if not q:
         if len(sentences) < 2:
             return ''

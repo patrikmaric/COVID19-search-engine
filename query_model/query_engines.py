@@ -206,7 +206,7 @@ class D2VQueryEngine(QueryEngine):
         self.__build_d2v(text_column)
         self.__build_paragraph_embeddings(text_column)
 
-    def run_query(self, query, n=5, q=True):
+    def run_query(self, query, n=10, q=True):
         preprocessed_query = preprocess_query(query, q)[0]
         query_tokens = []
         senten = sent_tokenize(preprocessed_query)
@@ -244,7 +244,7 @@ class D2VQueryEngine(QueryEngine):
         self.d2v = Doc2Vec(dm=0, **self.d2v_params)
         self.d2v.build_vocab(tok_corpus)
         self.d2v.train(tok_corpus, total_examples=self.d2v.corpus_count, epochs=self.d2v.epochs)
-
+        
     def __build_paragraph_embeddings(self, text_column):
         vectors = []
         for element in tqdm(self.corpus[text_column]):
@@ -255,7 +255,7 @@ class D2VQueryEngine(QueryEngine):
                 if '.' in words:
                     words.remove('.')
                 element_tokens += words
-            element_vec = self.d2v.infer_vector(element_tokens, steps=400, alpha=0.025).reshape(1, -1)
+            element_vec = self.d2v.infer_vector(element_tokens, steps=30, alpha=0.025).reshape(1, -1)
             vectors.append(element_vec[0])
         self.paragraph_vectors = np.array(vectors)
 
@@ -316,21 +316,28 @@ class BERTQueryEngine(QueryEngine):
 
 if __name__ == '__main__':
     article_paths = CovidDataLoader.load_articles_paths(data_root_path)
-    texts = CovidDataLoader.load_data(article_paths, key='abstract', offset=0, limit=30000, keys=body_text_keys,
+    texts = CovidDataLoader.load_data(article_paths, key='body_text', offset=0, limit=None, keys=body_text_keys,
                                       load_sentences=False, preprocess=True)
-
+    abstracts = CovidDataLoader.load_data(article_paths, key='abstract', offset=0, limit=None, keys=body_text_keys,
+                                      load_sentences=False, preprocess=True)
+    corpus = pd.concat([texts,abstracts])
+    nmb_par = len(corpus)
+    print('Number of paragraphs is:', nmb_par)
     params = {
         'min_count': 5, #5, #w2v
         'vector_size': 300,
         #'workers': 3,  #v2w
         'window': 15, #3, w2v
         'hs': 0,
-        'negative': 5,
+        'negative': 20,
         'sample': 0, #ne w2v
-        'epoch':400 #ne w2v
+        'epochs': 30, #ne w2v
+        'alpha': 0.025,
+        'min_alpha': 0.00025
     }
-    
+    print('D2V...')
     query_engine = D2VQueryEngine(params)
-    query_engine.fit(texts)
-    print("What is the incubation period?")
-    result = query_engine.run_query("What is the incubation period?")
+    query_engine.fit(corpus)
+    query_engine.save('/home/nikolina/','d2v')
+    print("Incubation period of Covid19?")
+    result = query_engine.run_query("Incubation period of Covid19?")
