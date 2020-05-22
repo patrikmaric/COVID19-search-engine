@@ -13,6 +13,8 @@ from data import CovidDataLoader, body_text_keys
 from settings import data_root_path
 from tqdm import tqdm
 from query_model.utils import BERT_sentence_embeddings
+from collections import Counter
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 epsilon = 0.0000000001
 
@@ -129,10 +131,11 @@ class W2VQueryEngine(QueryEngine):
         super().__init__()
         self.w2v_params = w2v_params
 
-    def fit(self, corpus, text_column='preprocessed_text'):
+    def fit(self, corpus, text_column='preprocessed_text', pooling='average'):
         self.corpus = corpus
+        self.tf_idf = TfidfVectorizer(smooth_idf=True, use_idf=True).fit(corpus[text_column])
         self.__build_w2v(text_column)
-        self.__build_paragraph_embeddings(text_column)
+        self.__build_paragraph_embeddings(text_column, pooling)
 
     def run_query(self, query, n=10, q=True):
         preprocessed_query = preprocess_query(query, q)[0]
@@ -156,41 +159,49 @@ class W2VQueryEngine(QueryEngine):
         # building vocab
         self.w2v = Word2Vec(tok_corpus, **self.w2v_params)
 
-    def __build_paragraph_embeddings(self, text_column):
+    def __build_paragraph_embeddings(self, text_column, pooling):
         vectors = []
         for element in self.corpus[text_column]:
-            element_vec = self.get_paragraph_embedding(element).reshape(1, -1)
+            element_vec = self.get_paragraph_embedding(element, pooling).reshape(1, -1)
             vectors.append(element_vec[0])
 
         self.paragraph_vectors = np.array(vectors)
 
-    ##Add up word2vec
-    def get_paragraph_embedding(self, paragraph):
+    def get_paragraph_embedding(self, paragraph, pooling):
         word_list = word_tokenize(paragraph)
+        
         while '.' in word_list:
             word_list.remove('.')
-        result_vec = np.zeros(np.shape(self.w2v[list(self.w2v.wv.vocab.keys())[0]])) + epsilon
-        cnt = 0
-        for word in word_list:
-            if word in self.w2v.wv.vocab.keys():
-                cnt += 1
-                result_vec += np.array(self.w2v[word])
-        if cnt > 0:
-            return result_vec/cnt
-        else:
-            return result_vec
-
-    
-    def __create_query_result(self, query, similarities, n):
-        result = {
-            'id': self.corpus['paper_id'],
-            'query': query,
-            'text': self.corpus['text'],
-            'sim': similarities,
-        }
-        result = pd.DataFrame(result).sort_values(by='sim', ascending=False)[:n]
-
-        return result[result['sim'] > 0]
+        
+        if pooling=='average':
+            result_vec = np.zeros(np.shape(self.w2v[list(self.w2v.wv.vocab.keys())[0]])) + epsilon
+            cnt = 0
+            for word in word_list:
+                if word in self.w2v.wv.vocab.keys():
+                    cnt += 1
+                    result_vec += np.array(self.w2v[word])
+            if cnt > 0:
+                return result_vec/cnt
+            else:
+                return result_vec
+            
+        if pooling=='weighted':
+            result_vec = np.zeros(np.shape(self.w2v[list(self.w2v.wv.vocab.keys())[0]])) + epsilon
+            cnt = 0
+            
+            df=dict(Counter(paragraph.split()).most_common())
+            norm=sum([a**2 for a in list(df.values()) ])
+            normalised_df = {k: v/norm for k, v in df.items()}
+            idf=dict(zip(self.tf_idf.get_feature_names(), self.tf_idf.idf_))
+            
+            for word in word_list:
+                if word in self.w2v.wv.vocab.keys():
+                    cnt += 1
+                    result_vec += np.array(self.w2v[word])*normalised_df[word]*idf['word']
+            if cnt > 0:
+                return result_vec/cnt
+            else:
+                return result_vec
 
 
 # requires preprocessed text; shouldn't load sentences
