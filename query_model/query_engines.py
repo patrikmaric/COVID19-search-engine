@@ -21,7 +21,7 @@ class QueryEngine():
     def __init__(self):
         self.corpus = None
 
-    def run_query(self, query, n=5):
+    def run_query(self, query, n=10):
         """
         Runs the given query, returns max n most similar documents from the corpus on which the model was built.
 
@@ -103,7 +103,7 @@ class BOWQueryEngine(QueryEngine):
         self.cv = count_vectorizer
         self.transformer = transformer
 
-    def run_query(self, query, n=5):
+    def run_query(self, query, n=10):
         if self.corpus is None:
             raise AttributeError('Model not built jet, please call the fit method before running queries!')
 
@@ -134,7 +134,7 @@ class W2VQueryEngine(QueryEngine):
         self.__build_w2v(text_column)
         self.__build_paragraph_embeddings(text_column)
 
-    def run_query(self, query, n=5, q=True):
+    def run_query(self, query, n=10, q=True):
         preprocessed_query = preprocess_query(query, q)[0]
         query_vector = self.get_paragraph_embedding(preprocessed_query)
         n1 = np.linalg.norm(query_vector)
@@ -215,7 +215,7 @@ class D2VQueryEngine(QueryEngine):
             tok.remove('.')
             query_tokens += tok
         
-        query_vector = self.d2v.infer_vector(query_tokens, steps=400, alpha=0.025).reshape(1, -1)
+        query_vector = self.d2v.infer_vector(query_tokens, steps=400).reshape(1, -1)
         n1 = np.linalg.norm(query_vector)
         qvn = np.divide(query_vector, n1)
         n2 = np.linalg.norm(self.paragraph_vectors, axis=1)
@@ -242,7 +242,9 @@ class D2VQueryEngine(QueryEngine):
             tok_corpus += [TaggedDocument(words=par_words[j], tags=tags[j]) for j in range(len(par_words))]
         # building vocab
         self.d2v = Doc2Vec(dm=0, **self.d2v_params)
+        print(self.d2v.epochs)
         self.d2v.build_vocab(tok_corpus)
+        print(self.d2v.corpus_count)
         self.d2v.train(tok_corpus, total_examples=self.d2v.corpus_count, epochs=self.d2v.epochs)
         
     def __build_paragraph_embeddings(self, text_column):
@@ -255,7 +257,7 @@ class D2VQueryEngine(QueryEngine):
                 if '.' in words:
                     words.remove('.')
                 element_tokens += words
-            element_vec = self.d2v.infer_vector(element_tokens, steps=30, alpha=0.025).reshape(1, -1)
+            element_vec = self.d2v.infer_vector(element_tokens).reshape(1, -1)
             vectors.append(element_vec[0])
         self.paragraph_vectors = np.array(vectors)
 
@@ -315,29 +317,45 @@ class BERTQueryEngine(QueryEngine):
         return result[result['sim'] > 0]
 
 if __name__ == '__main__':
-    article_paths = CovidDataLoader.load_articles_paths(data_root_path)
-    texts = CovidDataLoader.load_data(article_paths, key='body_text', offset=0, limit=None, keys=body_text_keys,
-                                      load_sentences=False, preprocess=True)
-    abstracts = CovidDataLoader.load_data(article_paths, key='abstract', offset=0, limit=None, keys=body_text_keys,
-                                      load_sentences=False, preprocess=True)
-    corpus = pd.concat([texts,abstracts])
-    nmb_par = len(corpus)
-    print('Number of paragraphs is:', nmb_par)
+#    article_paths = CovidDataLoader.load_articles_paths(data_root_path)
+#    texts = CovidDataLoader.load_data(article_paths, key='body_text', offset=0, limit=None, keys=body_text_keys,
+#                                      load_sentences=False, preprocess=True)
+#    abstracts = CovidDataLoader.load_data(article_paths, key='abstract', offset=0, limit=None, keys=body_text_keys,
+#                                      load_sentences=False, preprocess=True)
+#    corpus = pd.concat([texts,abstracts])
+#    corpus.to_csv('/home/nikolina/corpus.csv',index='paper_id')
+#    corpus = corpus.drop_duplicates(subset='preprocessed_text', keep='first')
+#    corpus.to_csv('/home/nikolina/corpus_without_dup.csv',index='paper_id')
+#    nmb_par = len(corpus)
+#    print('Number of paragraphs is:', nmb_par)
+    corpus = pd.read_csv("/home/nikolina/corpus.csv") 
+#    print('D2V...')
     params = {
-        'min_count': 5, #5, #w2v
-        'vector_size': 300,
-        #'workers': 3,  #v2w
-        'window': 15, #3, w2v
+        'min_count': 5,
+        'vector_size': 100,
+        #'workers': 11,  
+        'window': 5,
         'hs': 0,
-        'negative': 20,
-        'sample': 0, #ne w2v
-        'epochs': 30, #ne w2v
+        'negative': 5,
+        'sample': 0,
+        'epochs': 10,
         'alpha': 0.025,
-        'min_alpha': 0.00025
+        'min_apha': 0.0025  
     }
-    print('D2V...')
     query_engine = D2VQueryEngine(params)
-    query_engine.fit(corpus)
-    query_engine.save('/home/nikolina/','d2v')
-    print("Incubation period of Covid19?")
-    result = query_engine.run_query("Incubation period of Covid19?")
+#    query_engine.fit(corpus)
+#    query_engine.save('/home/nikolina/','d2v1')
+
+    print('W2V...')
+    params = {
+    'min_count': 5,
+    'size': 300, 
+    'workers': 3, 
+    'window': 5,
+    'sg': 0,
+    'hs': 0,
+    'negative': 5
+    }
+    query_engine = W2VQueryEngine(params)
+#    query_engine.fit(corpus)
+#    query_engine.save('/home/nikolina/','w2v')
