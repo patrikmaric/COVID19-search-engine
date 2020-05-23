@@ -139,7 +139,7 @@ class W2VQueryEngine(QueryEngine):
 
     def run_query(self, query, n=10, q=True):
         preprocessed_query = preprocess_query(query, q)[0]
-        query_vector = self.get_paragraph_embedding(preprocessed_query)
+        query_vector = self.get_paragraph_embedding(preprocessed_query, pooling='average')
         n1 = np.linalg.norm(query_vector)
         qvn = np.divide(query_vector, n1)
         n2 = np.linalg.norm(self.paragraph_vectors, axis=1)
@@ -195,7 +195,7 @@ class W2VQueryEngine(QueryEngine):
             idf=dict(zip(self.tf_idf.get_feature_names(), self.tf_idf.idf_))
             
             for word in word_list:
-                if word in self.w2v.wv.vocab.keys():
+                if word in self.w2v.wv.vocab.keys() and word in idf.keys() and word in normalised_df.keys():
                     cnt += 1
                     result_vec += np.array(self.w2v[word])*normalised_df[word]*idf['word']
             if cnt > 0:
@@ -253,9 +253,7 @@ class D2VQueryEngine(QueryEngine):
             tok_corpus += [TaggedDocument(words=par_words[j], tags=tags[j]) for j in range(len(par_words))]
         # building vocab
         self.d2v = Doc2Vec(dm=0, **self.d2v_params)
-        print(self.d2v.epochs)
         self.d2v.build_vocab(tok_corpus)
-        print(self.d2v.corpus_count)
         self.d2v.train(tok_corpus, total_examples=self.d2v.corpus_count, epochs=self.d2v.epochs)
         
     def __build_paragraph_embeddings(self, text_column):
@@ -341,32 +339,32 @@ if __name__ == '__main__':
 #    print('Number of paragraphs is:', nmb_par)
     corpus = pd.read_csv("/home/nikolina/corpus.csv") 
 #    print('D2V...')
-    params = {
-        'min_count': 5,
-        'vector_size': 100,
-        #'workers': 11,  
-        'window': 5,
-        'hs': 0,
-        'negative': 5,
-        'sample': 0,
-        'epochs': 10,
-        'alpha': 0.025,
-        'min_apha': 0.0025  
-    }
-    query_engine = D2VQueryEngine(params)
+#    params = {
+#        'min_count': 5,
+#        'vector_size': 100,
+#        #'workers': 11,  
+#        'window': 5,
+#        'hs': 0,
+#        'negative': 5,
+#        'sample': 0,
+#        'epochs': 10,
+#        'alpha': 0.025,
+#        'min_apha': 0.0025  
+#    }
+#    query_engine = D2VQueryEngine(params)
 #    query_engine.fit(corpus)
 #    query_engine.save('/home/nikolina/','d2v1')
-
-    print('W2V...')
-    params = {
-    'min_count': 5,
-    'size': 300, 
-    'workers': 3, 
-    'window': 5,
-    'sg': 0,
-    'hs': 0,
-    'negative': 5
-    }
-    query_engine = W2VQueryEngine(params)
-#    query_engine.fit(corpus)
-#    query_engine.save('/home/nikolina/','w2v')
+#
+#    print('W2V...')
+#    params = {
+#    'min_count': 5,
+#    'size': 300, 
+#    'workers': 3, 
+#    'window': 5,
+#    'sg': 0,
+#    'hs': 0,
+#    'negative': 5
+#    }
+#    query_engine = W2VQueryEngine(params)
+#    query_engine.fit(corpus,pooling='weighted')
+#    query_engine.save('/home/nikolina/','w2vtfidf')

@@ -64,7 +64,10 @@ def preprocess_data(texts, q):  # requires json format
                     d['preprocessed_text'] = stem_sentence
             sentences.append(d)
             temp = pd.DataFrame(sentences)
-    return filter_by_language(temp[temp['preprocessed_text'] != ''])
+    if not q:
+        return filter_by_language(temp[temp['preprocessed_text'] != ''])
+    if q:
+        return temp[temp['preprocessed_text'] != '']
 
 
 def word_stem(sentences, q):
@@ -72,12 +75,15 @@ def word_stem(sentences, q):
     stem_sentences = []
     new_sentences = sent_tokenize(sentences)
     sentences = []
-    for sent in new_sentences:
-        word_tokens = word_tokenize(sent)
-        if word_tokens[-1] == '?':
-            continue
-        else:
-            sentences.append(sent)
+    if q:
+        sentences = new_sentences
+    if not q:
+        for sent in new_sentences:
+            word_tokens = word_tokenize(sent)
+            if word_tokens[-1] == '?':
+                continue
+            else:
+                sentences.append(sent)
     if not q:
         if len(sentences) < 2:
             return ''
@@ -94,6 +100,7 @@ def word_stem(sentences, q):
                 stem_sentence.append(' ')
         if (len(stem_sentence) > 0):
             stem_sentences.append(''.join(stem_sentence))
+    print('st',stem_sentences)
     return '. '.join(stem_sentences) + '.'
 
 
