@@ -310,10 +310,10 @@ class BERTQueryEngine(QueryEngine):
                     similarities.append(np.mean(sent_sims,axis=0))
         
             elif pooling=='max':
-                similarities.append(np.amax(np.dot(item,query_embedding.T),axis=0))
+                similarities.append(np.amax(sent_sims,axis=0))
             
             elif pooling=='mean':
-                similarities.append(np.mean(np.dot(item,query_embedding.T),axis=0))
+                similarities.append(np.mean(sent_sims,axis=0))
 
         similarities=np.squeeze(np.array(similarities))
         
