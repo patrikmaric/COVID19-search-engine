@@ -1,5 +1,5 @@
 import pickle
-
+import bottleneck as bn
 import numpy as np
 import pandas as pd
 from gensim.models import Doc2Vec
@@ -289,17 +289,34 @@ class BERTQueryEngine(QueryEngine):
 
     def fit(self, corpus, text_column='preprocessed_text'):
         self.corpus = corpus
-        self.corpus_embeddings = BERT_sentence_embeddings(corpus, text_column, query=False)
+        self.corpus_sent_emb = BERT_sentence_embeddings(corpus, text_column, query=False)
 
-    def run_query(self, query, n=5):
+    def run_query(self, query, pooling='mean', n=10):
         if self.corpus is None:
             raise AttributeError('Model not built yet, please call the fit method before running queries!')
 
         assert type(query) == str
 
+        similarities=[]
         query_embedding = BERT_sentence_embeddings(query, query=True)
-        similarities = np.dot(self.corpus_embeddings, query_embedding.T)  # TODO: check if this already sorts values
 
+        for item in self.corpus_sent_emb:
+            sent_sims=np.dot(item,query_embedding.T)
+        
+            if pooling=='top2':
+                if len(item)>2:
+                    similarities.append(np.mean(-bn.partition(-sent_sims, kth=2,axis=0)[:2],axis=0))
+                else:
+                    similarities.append(np.mean(sent_sims,axis=0))
+        
+            elif pooling=='max':
+                similarities.append(np.amax(np.dot(item,query_embedding.T),axis=0))
+            
+            elif pooling=='mean':
+                similarities.append(np.mean(np.dot(item,query_embedding.T),axis=0))
+
+        similarities=np.squeeze(np.array(similarities))
+        
         return self.__create_query_result(query, similarities, n)
 
     def __create_query_result(self, query, similarities, n):
@@ -317,7 +334,7 @@ class BERTQueryEngine(QueryEngine):
             'id': self.corpus['paper_id'],
             'query': [query] * len(self.corpus),
             'text': self.corpus['text'],
-            'sim': np.squeeze(similarities)
+            'sim': similarities
         }
 
         result = pd.DataFrame(result).sort_values(by='sim', ascending=False)[:n]
