@@ -1,4 +1,6 @@
 import pickle
+from collections import Counter
+
 import bottleneck as bn
 import numpy as np
 import pandas as pd
@@ -6,17 +8,15 @@ from gensim.models import Doc2Vec
 from gensim.models import Word2Vec
 from gensim.models.doc2vec import TaggedDocument
 from nltk.tokenize import sent_tokenize, word_tokenize
+from sklearn.feature_extraction.text import TfidfVectorizer
+# from preprocessing.preprocessing import preprocess_query
+from tqdm import tqdm
 
 from dataset.preprocessing.preprocessing import preprocess_query
-#from preprocessing.preprocessing import preprocess_query
-from data import CovidDataLoader, body_text_keys
-from settings import data_root_path
-from tqdm import tqdm
 from query_model.utils import BERT_sentence_embeddings
-from collections import Counter
-from sklearn.feature_extraction.text import TfidfVectorizer
 
 epsilon = 0.0000000001
+
 
 class QueryEngine():
 
@@ -105,20 +105,24 @@ class BOWQueryEngine(QueryEngine):
         self.cv = count_vectorizer
         self.transformer = transformer
 
-    def run_query(self, query, n=10):
+    def run_query(self, query, n=10, q=True):
         if self.corpus is None:
             raise AttributeError('Model not built jet, please call the fit method before running queries!')
 
         if type(query) == str:
-            query = [query]
-        query_word_count_vector = self.cv.transform(query)
+            preprocessed_query = preprocess_query(query, q)[0]
+            preprocessed_query = [preprocessed_query]
+            #preprocessed_query = [query]
+        else:
+            raise Exception('Query must be string!')
+        query_word_count_vector = self.cv.transform(preprocessed_query)
         query_vector = self.transformer.transform(query_word_count_vector)
         similarities = query_vector.dot(self.corpus_vector.T)  # TODO: check if this already sorts values
-        return self._QueryEngine__create_query_result(query, similarities, n)
+        return self._QueryEngine__create_query_result([query], similarities, n)
 
     def fit(self, corpus, text_column='preprocessed_text'):
         self.corpus = corpus
-        word_count_vector = self.cv.fit_transform(corpus['text'])
+        word_count_vector = self.cv.fit_transform(corpus[text_column])
         self.transformer.fit(word_count_vector)
         self.corpus_vector = self.transformer.transform(word_count_vector)
 
@@ -169,11 +173,11 @@ class W2VQueryEngine(QueryEngine):
 
     def get_paragraph_embedding(self, paragraph, pooling):
         word_list = word_tokenize(paragraph)
-        
+
         while '.' in word_list:
             word_list.remove('.')
-        
-        if pooling=='average':
+
+        if pooling == 'average':
             result_vec = np.zeros(np.shape(self.w2v[list(self.w2v.wv.vocab.keys())[0]])) + epsilon
             cnt = 0
             for word in word_list:
@@ -181,27 +185,38 @@ class W2VQueryEngine(QueryEngine):
                     cnt += 1
                     result_vec += np.array(self.w2v[word])
             if cnt > 0:
-                return result_vec/cnt
+                return result_vec / cnt
             else:
                 return result_vec
-            
-        if pooling=='weighted':
+
+        if pooling == 'weighted':
             result_vec = np.zeros(np.shape(self.w2v[list(self.w2v.wv.vocab.keys())[0]])) + epsilon
             cnt = 0
-            
-            df=dict(Counter(paragraph.split()).most_common())
-            norm=sum([a**2 for a in list(df.values()) ])
-            normalised_df = {k: v/norm for k, v in df.items()}
-            idf=dict(zip(self.tf_idf.get_feature_names(), self.tf_idf.idf_))
-            
+
+            df = dict(Counter(paragraph.split()).most_common())
+            norm = sum([a ** 2 for a in list(df.values())])
+            normalised_df = {k: v / norm for k, v in df.items()}
+            idf = dict(zip(self.tf_idf.get_feature_names(), self.tf_idf.idf_))
+
             for word in word_list:
                 if word in self.w2v.wv.vocab.keys() and word in idf.keys() and word in normalised_df.keys():
                     cnt += 1
-                    result_vec += np.array(self.w2v[word])*normalised_df[word]*idf['word']
+                    result_vec += np.array(self.w2v[word]) * normalised_df[word] * idf['word']
             if cnt > 0:
-                return result_vec/cnt
+                return result_vec / cnt
             else:
                 return result_vec
+
+    def __create_query_result(self, query, similarities, n):
+        result = {
+            'id': self.corpus['paper_id'],
+            'query': query,
+            'text': self.corpus['text'],
+            'sim': similarities,
+        }
+        result = pd.DataFrame(result).sort_values(by='sim', ascending=False)[:n]
+
+        return result[result['sim'] > 0]
 
 
 # requires preprocessed text; shouldn't load sentences
@@ -225,7 +240,7 @@ class D2VQueryEngine(QueryEngine):
             tok = word_tokenize(sent)
             tok.remove('.')
             query_tokens += tok
-        
+
         query_vector = self.d2v.infer_vector(query_tokens, steps=400).reshape(1, -1)
         n1 = np.linalg.norm(query_vector)
         qvn = np.divide(query_vector, n1)
@@ -255,7 +270,7 @@ class D2VQueryEngine(QueryEngine):
         self.d2v = Doc2Vec(dm=0, **self.d2v_params)
         self.d2v.build_vocab(tok_corpus)
         self.d2v.train(tok_corpus, total_examples=self.d2v.corpus_count, epochs=self.d2v.epochs)
-        
+
     def __build_paragraph_embeddings(self, text_column):
         vectors = []
         for element in tqdm(self.corpus[text_column]):
@@ -342,19 +357,20 @@ class BERTQueryEngine(QueryEngine):
         # return result
         return result[result['sim'] > 0]
 
+
 if __name__ == '__main__':
-#    article_paths = CovidDataLoader.load_articles_paths(data_root_path)
-#    texts = CovidDataLoader.load_data(article_paths, key='body_text', offset=0, limit=None, keys=body_text_keys,
-#                                      load_sentences=False, preprocess=True)
-#    abstracts = CovidDataLoader.load_data(article_paths, key='abstract', offset=0, limit=None, keys=body_text_keys,
-#                                      load_sentences=False, preprocess=True)
-#    corpus = pd.concat([texts,abstracts])
-#    corpus.to_csv('/home/nikolina/corpus.csv',index='paper_id')
-#    corpus = corpus.drop_duplicates(subset='preprocessed_text', keep='first')
-#    corpus.to_csv('/home/nikolina/corpus_without_dup.csv',index='paper_id')
-#    nmb_par = len(corpus)
-#    print('Number of paragraphs is:', nmb_par)
-    corpus = pd.read_csv("/home/nikolina/corpus.csv") 
+    #    article_paths = CovidDataLoader.load_articles_paths(data_root_path)
+    #    texts = CovidDataLoader.load_data(article_paths, key='body_text', offset=0, limit=None, keys=body_text_keys,
+    #                                      load_sentences=False, preprocess=True)
+    #    abstracts = CovidDataLoader.load_data(article_paths, key='abstract', offset=0, limit=None, keys=body_text_keys,
+    #                                      load_sentences=False, preprocess=True)
+    #    corpus = pd.concat([texts,abstracts])
+    #    corpus.to_csv('/home/nikolina/corpus.csv',index='paper_id')
+    #    corpus = corpus.drop_duplicates(subset='preprocessed_text', keep='first')
+    #    corpus.to_csv('/home/nikolina/corpus_without_dup.csv',index='paper_id')
+    #    nmb_par = len(corpus)
+    #    print('Number of paragraphs is:', nmb_par)
+    corpus = pd.read_csv("/home/nikolina/corpus.csv")
 #    print('D2V...')
 #    params = {
 #        'min_count': 5,
