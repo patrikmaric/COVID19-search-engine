@@ -100,7 +100,7 @@ def word_stem(sentences, q):
                 stem_sentence.append(' ')
         if (len(stem_sentence) > 0):
             stem_sentences.append(''.join(stem_sentence))
-    print('st',stem_sentences)
+    #print('st',stem_sentences)
     return '. '.join(stem_sentences) + '.'
 
 
