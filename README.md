@@ -1,4 +1,4 @@
-# COVID19-search-engine
+# COVID19 search engine
 
 Group project assignment for [Text Analysis and Retrieval](https://www.fer.unizg.hr/en/course/taar) course held at
  [University of Zagreb, Faculty of Electrical Engineering and Computing](https://www.fer.unizg.hr/en). <br>
