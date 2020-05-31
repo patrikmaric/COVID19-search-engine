@@ -42,7 +42,7 @@ class QueryEngine():
 
         Args:
             corpus: list of documents to build the model on
-            document_ids: optional, if given it will associate the given id's to each document given in the corpus
+            text_column: column of a corpus text to fit the models on
         """
         pass
 
@@ -335,16 +335,7 @@ class BERTQueryEngine(QueryEngine):
         return self.__create_query_result(query, similarities, n)
 
     def __create_query_result(self, query, similarities, n):
-        """
-
-        Args:
-            similarities: sparse matrix containing cosine similarities between the query vector and documents from corpus
-            n: number of most similar documents to include in the result
-
-        Returns:
-            pandas DataFrame containing query, document, similarity
-        """
-
+        
         result = {
             'id': self.corpus['paper_id'],
             'query': [query] * len(self.corpus),
