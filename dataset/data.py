@@ -61,10 +61,10 @@ class CovidDataLoader():
             limit: number of articles to load
             keys: specifier for the data defined by the key
             load_sentences: if true, it divides the sections further into sentences
-            stem: if true, it returns sentences with stemmed words
+            preprocess: if true, returns preprocessed data
 
         Returns:
-
+            DataFrame defined by selected parameter values
         """
         N = len(articles_paths)
         assert offset < N
