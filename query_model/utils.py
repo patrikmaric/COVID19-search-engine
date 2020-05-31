@@ -22,12 +22,10 @@ def normalize(embeddings):
 def BERT_sentence_embeddings(data, text_column=None, query=False):
     """
     Input:
-        corpus: DataFrame containing information about paragraphs : paper_id, section, text
-        query: if True, import is one sentence - a query
+        data: DataFrame containing information about paragraphs : paper_id, section, text, preprocessed_text
+        query: if True, output is one sentence - an encoded query
     Returns:
-        corpus embeddings: numpy array containing paragraph embeddings for each text paragraph in input
-        which is obtained by averaging over sentence embeddings(try #1 - until a better idea arrives (probably not so great))
-        -dimensions: n x 768 where n represents number of input paragraphs
+        corpus_sent_embeddings: if query=False: list of numpy arrays containing sentence embeddings for each paragraph 
 
     References
     ----------
@@ -52,7 +50,6 @@ def BERT_sentence_embeddings(data, text_column=None, query=False):
 
     elif text_column:
         text_paragraphs = [paragraph for paragraph in list(data[text_column])]
-        #n = len(text_paragraphs)
 
         corpus_sent_emb = []
         for paragraph in tqdm(text_paragraphs):
